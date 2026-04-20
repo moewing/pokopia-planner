@@ -2,7 +2,7 @@
 
 > A cozy planning companion for Pokémon Pokopia — find, filter, and match your Pokémon to build cozy, cycle-efficient habitats.
 
-**[🔗 Live Demo](https://pokopia-planner.vercel.app)** · **[📖 中文说明](#中文说明)**
+**[🔗 Live Demo](https://pokopia-planner-three.vercel.app)** · **[📖 中文说明](#中文说明)**
 
 <!-- Add a screenshot to docs/screenshot.png and uncomment below once deployed. -->
 <!-- ![Screenshot](./docs/screenshot.png) -->
