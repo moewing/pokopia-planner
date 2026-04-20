@@ -7,7 +7,12 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { PokemonIcon } from "@/components/pokemon-icon";
 import { useSelectedPokemon } from "@/store/planner-store";
-import { planTerrace, type CellLayout, type Zone } from "@/lib/terrace";
+import {
+  planTerrace,
+  type CellLayout,
+  type UnhousedRecord,
+  type Zone,
+} from "@/lib/terrace";
 import { cn } from "@/lib/utils";
 import {
   ENVIRONMENT_CLASSES,
@@ -108,28 +113,9 @@ export function TerracePlanner({ onPick }: Props) {
       {/* Terrace flow */}
       <TerraceFlow layout={layout} onPick={onPick} />
 
-      {/* Unhoused */}
+      {/* Unhoused — split by reason */}
       {layout.unhoused.length > 0 ? (
-        <Card className="rounded-3xl border-dashed border-destructive/40 bg-destructive/5 shadow-none">
-          <CardContent className="flex flex-col gap-3 p-5">
-            <div className="flex items-center gap-2 text-sm font-medium text-destructive">
-              无法入住（同轴环境冲突 / 格子满员）
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {layout.unhoused.map((p) => (
-                <button
-                  key={p.id}
-                  type="button"
-                  onClick={() => onPick(p)}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-background px-2 py-1 text-xs"
-                >
-                  <PokemonIcon pokemon={p} size={20} />
-                  {p.name}
-                </button>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+        <UnhousedSection unhoused={layout.unhoused} onPick={onPick} />
       ) : null}
     </div>
   );
@@ -388,6 +374,198 @@ function ZoneBlock({
           </Badge>
         ))}
       </div>
+    </div>
+  );
+}
+
+// --------------------------------------------------------------------------
+// Unhoused section — split by reason with actionable hints
+// --------------------------------------------------------------------------
+
+function UnhousedSection({
+  unhoused,
+  onPick,
+}: {
+  unhoused: UnhousedRecord[];
+  onPick: (p: Pokemon) => void;
+}) {
+  const conflicts = unhoused.filter((u) => u.reason === "env_conflict");
+  const fulls = unhoused.filter((u) => u.reason === "cell_full");
+
+  return (
+    <div className="flex flex-col gap-3">
+      {conflicts.length > 0 ? (
+        <Card className="rounded-3xl border-dashed border-destructive/40 bg-destructive/5 shadow-none">
+          <CardContent className="flex flex-col gap-3 p-5">
+            <div className="flex flex-col gap-0.5">
+              <span className="text-[11px] uppercase tracking-widest text-destructive/80">
+                environment clash · {conflicts.length} 只
+              </span>
+              <h3 className="text-sm font-semibold text-destructive">
+                同轴环境冲突 —— 和现有居住地的环境互斥
+              </h3>
+              <p className="text-[11px] text-destructive/70">
+                它们需要的环境和地图里已经排上的某个轴的值正好相反（如明亮↔昏暗），物理上无法同图。建议另建一个 terrace。
+              </p>
+            </div>
+            <div className="flex flex-col gap-2">
+              {conflicts.map((u) => (
+                <ConflictRow key={u.pokemon.id} record={u} onPick={onPick} />
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      ) : null}
+
+      {fulls.length > 0 ? (
+        <Card className="rounded-3xl border-dashed border-amber-400/40 bg-amber-50/40 shadow-none">
+          <CardContent className="flex flex-col gap-3 p-5">
+            <div className="flex flex-col gap-0.5">
+              <span className="text-[11px] uppercase tracking-widest text-amber-700/80">
+                cells full · {fulls.length} 只
+              </span>
+              <h3 className="text-sm font-semibold text-amber-900/90">
+                格子已满（按效率排队未上）
+              </h3>
+              <p className="text-[11px] text-amber-900/70">
+                目前上榜的是"喜欢的事物与他人重叠最多"的宝可梦。这些没挤上的 pokemon 兴趣相对独特，
+                可以看看它们喜欢什么，决定是另建 terrace 还是直接换人。
+              </p>
+            </div>
+            <div className="flex flex-col gap-2">
+              {fulls.map((u) => (
+                <FullRow key={u.pokemon.id} record={u} onPick={onPick} />
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      ) : null}
+    </div>
+  );
+}
+
+function ConflictRow({
+  record,
+  onPick,
+}: {
+  record: UnhousedRecord;
+  onPick: (p: Pokemon) => void;
+}) {
+  const p = record.pokemon;
+  const pEnv = p.env as Environment;
+  const pCls = ENVIRONMENT_CLASSES[pEnv];
+  const conflicting = record.conflictingEnvs ?? [];
+
+  return (
+    <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-border/60 bg-background px-3 py-2">
+      <button
+        type="button"
+        onClick={() => onPick(p)}
+        className="flex items-center gap-2 text-sm font-medium"
+      >
+        <PokemonIcon pokemon={p} size={28} />
+        <span className="font-mono text-[10px] text-muted-foreground">
+          #{String(p.id).padStart(3, "0")}
+        </span>
+        <span>{p.name}</span>
+      </button>
+      <div className="flex items-center gap-1 text-[11px]">
+        <span className="text-muted-foreground">需要</span>
+        <Badge
+          variant="outline"
+          className={cn(
+            pCls.bg,
+            pCls.text,
+            pCls.border,
+            "gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium",
+          )}
+        >
+          <span aria-hidden>{ENVIRONMENT_EMOJI[pEnv]}</span>
+          {pEnv}
+        </Badge>
+        <span className="text-muted-foreground">但冲突于</span>
+        {conflicting.map((e) => {
+          const cls = ENVIRONMENT_CLASSES[e];
+          return (
+            <Badge
+              key={e}
+              variant="outline"
+              className={cn(
+                cls.bg,
+                cls.text,
+                cls.border,
+                "gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium opacity-80",
+              )}
+            >
+              <span aria-hidden>{ENVIRONMENT_EMOJI[e]}</span>
+              {e}
+            </Badge>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function FullRow({
+  record,
+  onPick,
+}: {
+  record: UnhousedRecord;
+  onPick: (p: Pokemon) => void;
+}) {
+  const p = record.pokemon;
+  const pEnv = p.env as Environment;
+  const pCls = ENVIRONMENT_CLASSES[pEnv];
+
+  return (
+    <div className="flex flex-col gap-1.5 rounded-2xl border border-border/60 bg-background px-3 py-2">
+      <div className="flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          onClick={() => onPick(p)}
+          className="flex items-center gap-2 text-sm font-medium"
+        >
+          <PokemonIcon pokemon={p} size={28} />
+          <span className="font-mono text-[10px] text-muted-foreground">
+            #{String(p.id).padStart(3, "0")}
+          </span>
+          <span>{p.name}</span>
+        </button>
+        <Badge
+          variant="outline"
+          className={cn(
+            pCls.bg,
+            pCls.text,
+            pCls.border,
+            "gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium",
+          )}
+        >
+          <span aria-hidden>{ENVIRONMENT_EMOJI[pEnv]}</span>
+          {pEnv}
+        </Badge>
+        <span className="font-mono text-[10px] text-muted-foreground">
+          效率分 {record.efficiencyScore}
+        </span>
+      </div>
+      {record.likes.length > 0 ? (
+        <div className="flex items-start gap-2">
+          <span className="shrink-0 text-[10px] uppercase tracking-widest text-muted-foreground">
+            如果另建 terrace,它喜欢
+          </span>
+          <div className="flex flex-wrap gap-1">
+            {record.likes.map((l) => (
+              <Badge
+                key={l}
+                variant="outline"
+                className="rounded-full border-pkp-mint-ink/20 bg-pkp-mint px-2 py-0.5 text-[10px] text-pkp-mint-ink"
+              >
+                {l}
+              </Badge>
+            ))}
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

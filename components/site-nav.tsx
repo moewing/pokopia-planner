@@ -7,48 +7,52 @@ import {
   Recycle,
   LayoutGrid,
   Sparkles,
-  Pencil,
+  Flag,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { PokeballMark } from "@/components/pokeball-mark";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { LanguageToggle } from "@/components/language-toggle";
+import { useT } from "@/lib/i18n";
 
 const navItems = [
   {
     href: "/pokedex",
-    label: "图鉴",
+    labelKey: "nav.pokedex",
     icon: BookOpen,
     match: (p: string) => p.startsWith("/pokedex"),
   },
   {
     href: "/recipes",
-    label: "循环",
+    labelKey: "nav.recipes",
     icon: Recycle,
     match: (p: string) => p.startsWith("/recipes"),
   },
   {
     href: "/planner/early",
-    label: "前期",
+    labelKey: "nav.plannerEarly",
     icon: LayoutGrid,
     match: (p: string) => p === "/planner/early",
   },
   {
     href: "/planner/late",
-    label: "后期",
+    labelKey: "nav.plannerLate",
     icon: Sparkles,
     match: (p: string) => p === "/planner/late",
   },
   {
-    href: "/edit",
-    label: "编辑",
-    icon: Pencil,
-    match: (p: string) => p.startsWith("/edit"),
+    href: "/feedback",
+    labelKey: "nav.feedback",
+    icon: Flag,
+    match: (p: string) => p.startsWith("/feedback") || p.startsWith("/edit"),
   },
 ];
 
 export function SiteNav() {
   const pathname = usePathname();
+  const { t } = useT();
+
   return (
     <header className="sticky top-0 z-30 border-b border-border/60 bg-background/80 backdrop-blur">
       <nav className="mx-auto flex max-w-6xl items-center gap-2 px-4 py-3 sm:px-6">
@@ -61,7 +65,7 @@ export function SiteNav() {
         </Link>
 
         <div className="flex flex-1 items-center gap-1 overflow-x-auto">
-          {navItems.map(({ href, label, icon: Icon, match }) => {
+          {navItems.map(({ href, labelKey, icon: Icon, match }) => {
             const active = match(pathname);
             return (
               <Link
@@ -75,13 +79,16 @@ export function SiteNav() {
                 )}
               >
                 <Icon className="size-4" strokeWidth={1.75} />
-                <span className="hidden sm:inline">{label}</span>
+                <span className="hidden sm:inline">{t(labelKey)}</span>
               </Link>
             );
           })}
         </div>
 
-        <ThemeToggle className="shrink-0" />
+        <div className="flex shrink-0 items-center gap-1">
+          <LanguageToggle />
+          <ThemeToggle />
+        </div>
       </nav>
     </header>
   );

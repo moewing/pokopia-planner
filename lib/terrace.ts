@@ -1,4 +1,4 @@
-import type { Environment, Pokemon } from "@/types/pokemon";
+import type { EnvAxis, Environment, Pokemon } from "@/types/pokemon";
 import { ENV_TO_AXIS } from "@/types/pokemon";
 
 /**
@@ -56,10 +56,26 @@ export interface Zone {
   suggestions: ItemSuggestion[];
 }
 
+/** Why a pokemon couldn't be housed in this terrace. */
+export type UnhousedReason =
+  | "env_conflict" // pokemon's env axis is occupied by the opposite value — no cell can accept them
+  | "cell_full"; // a compatible cell exists but is full; we're at MAX_CELLS so can't overflow
+
+export interface UnhousedRecord {
+  pokemon: Pokemon;
+  reason: UnhousedReason;
+  /** For env_conflict: which env(s) on the same axis are currently occupying cells. */
+  conflictingEnvs?: Environment[];
+  /** What this pokemon likes — useful when deciding to build a second terrace. */
+  likes: string[];
+  /** Efficiency score at the time of assignment (lower = less desirable to keep). */
+  efficiencyScore: number;
+}
+
 export interface TerraceLayout {
   cells: CellLayout[];
   zones: Zone[];
-  unhoused: Pokemon[]; // couldn't find a compatible cell (shouldn't happen in normal use)
+  unhoused: UnhousedRecord[];
   warnings: string[];
   stats: {
     pokemon: number;
@@ -120,7 +136,30 @@ export function planTerrace(selected: readonly Pokemon[]): TerraceLayout {
   );
   const envsRepresented = sortedEnvs.length;
 
-  // ---- 2. Figure out cell layout ----------------------------------------
+  // ---- 2a. Sort pool by efficiency (shared-likes with others desc) so the
+  //         most "broadly-useful" pokemon get priority if space is tight.
+  const efficiencyScore = new Map<number, number>();
+  for (const p of pool) {
+    let shared = 0;
+    for (const l of p.likes) {
+      for (const q of pool) {
+        if (q.id === p.id) continue;
+        if (q.likes.includes(l)) {
+          shared += 1;
+          break;
+        }
+      }
+    }
+    efficiencyScore.set(p.id, shared);
+  }
+  const sortedPool = [...pool].sort((a, b) => {
+    const sa = efficiencyScore.get(a.id) ?? 0;
+    const sb = efficiencyScore.get(b.id) ?? 0;
+    if (sb !== sa) return sb - sa;
+    return a.id - b.id; // stable tie-break
+  });
+
+  // ---- 2b. Figure out cell layout ----------------------------------------
   // Strategy: the most-populated env becomes the shared env across all cells
   // (it goes in every cell because its pokemon must be hosted somewhere).
   // Each OTHER env (on a non-conflicting axis with shared) gets its own cell,
@@ -174,11 +213,33 @@ export function planTerrace(selected: readonly Pokemon[]): TerraceLayout {
     pokemon: [],
   }));
 
-  const unhoused: Pokemon[] = [];
-  for (const p of pool) {
+  // Precompute axis → envs currently configured across slots (for conflict reporting)
+  const axisOccupants: Record<EnvAxis, Environment[]> = {
+    "bright-dim": [],
+    "warm-cool": [],
+    "dry-humid": [],
+  };
+  for (const c of clippedSlots) {
+    for (const e of c.envs) {
+      axisOccupants[ENV_TO_AXIS[e]].push(e);
+    }
+  }
+
+  const unhoused: UnhousedRecord[] = [];
+  for (const p of sortedPool) {
     const e = p.env as Environment;
+    const score = efficiencyScore.get(p.id) ?? 0;
+
     if (droppedEnvs.has(e)) {
-      unhoused.push(p);
+      const ax = ENV_TO_AXIS[e];
+      const conflicting = axisOccupants[ax].filter((x) => x !== e);
+      unhoused.push({
+        pokemon: p,
+        reason: "env_conflict",
+        conflictingEnvs: conflicting,
+        likes: p.likes,
+        efficiencyScore: score,
+      });
       continue;
     }
     // Find the slot whose env set contains this pokemon's env and has room
@@ -188,8 +249,6 @@ export function planTerrace(selected: readonly Pokemon[]): TerraceLayout {
     if (targetIdx === -1) {
       // Try spinning up an overflow cell if we're under MAX_CELLS_PER_TERRACE.
       if (cells.length < MAX_CELLS_PER_TERRACE) {
-        // Copy env set from the (existing) primary cell that also has this env
-        // so the new cell can absorb overflow from every env sharing that cell.
         const primary = cells.find((c) => c.envs.includes(e));
         const overflowEnvs = primary ? [...primary.envs] : [e];
         cells.push({
@@ -198,18 +257,31 @@ export function planTerrace(selected: readonly Pokemon[]): TerraceLayout {
           envs: overflowEnvs,
           pokemon: [],
         });
+        for (const ee of overflowEnvs) axisOccupants[ENV_TO_AXIS[ee]].push(ee);
         targetIdx = cells.length - 1;
       } else {
-        unhoused.push(p);
+        unhoused.push({
+          pokemon: p,
+          reason: "cell_full",
+          likes: p.likes,
+          efficiencyScore: score,
+        });
         continue;
       }
     }
     cells[targetIdx].pokemon.push(p);
   }
 
-  if (unhoused.length > 0) {
+  const conflictCount = unhoused.filter((u) => u.reason === "env_conflict").length;
+  const fullCount = unhoused.filter((u) => u.reason === "cell_full").length;
+  if (conflictCount > 0) {
     warnings.push(
-      `${unhoused.length} 只宝可梦因格子满员或环境冲突未入住，建议拆 2 个 terrace 或减少选择`,
+      `${conflictCount} 只宝可梦的环境与现有居住地互斥 —— 建议另建一个 terrace`,
+    );
+  }
+  if (fullCount > 0) {
+    warnings.push(
+      `${fullCount} 只宝可梦排在效率队尾未能入住 —— 可以考虑减少同 env 宝可梦或再建一个 terrace`,
     );
   }
 

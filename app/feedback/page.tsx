@@ -8,6 +8,9 @@ import {
   Check,
   Save,
   Search,
+  Flag,
+  Send,
+  Info,
 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -33,6 +36,7 @@ import {
   tasteToArray,
   type PokemonOverride,
 } from "@/lib/data";
+import { buildFeedbackIssueUrl } from "@/lib/feedback";
 import { useAllPokemon, useOverridesStore } from "@/store/overrides-store";
 import { cn } from "@/lib/utils";
 import {
@@ -93,6 +97,20 @@ export default function EditPage() {
     URL.revokeObjectURL(url);
   };
 
+  const submitToGithub = () => {
+    const { url, bodyTooLong, body } = buildFeedbackIssueUrl(
+      merged,
+      overrides,
+    );
+    if (bodyTooLong && typeof navigator !== "undefined" && navigator.clipboard) {
+      navigator.clipboard.writeText(body).catch(() => {});
+      alert(
+        "改动太多、URL 装不下——已把修改报告复制到剪贴板。\n\n下面会打开一个 GitHub issue 页面，直接粘贴到正文即可。",
+      );
+    }
+    window.open(url, "_blank", "noopener,noreferrer");
+  };
+
   const modifiedCount = Object.keys(overrides).length;
 
   return (
@@ -100,17 +118,17 @@ export default function EditPage() {
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div className="flex flex-col gap-1">
           <span className="text-xs uppercase tracking-widest text-muted-foreground">
-            Edit
+            Feedback
           </span>
           <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-            数据纠错
+            发现错误？
           </h1>
           <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
-            玩得多了、发现数据和实际不符？在这里改，改动只存本地（localStorage），
-            不会动仓库里的 <code>pokemon.json</code>。导出 JSON 按钮可以把当前修改后的完整数据存成文件。
+            玩得多了、发现某只宝可梦的数据和实际不符？在这里把你觉得对的值填进去，
+            修改只存你自己的浏览器（不会影响其他访客），但可以一键把差异发成 GitHub issue 提交给作者修正。
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Badge
             variant="outline"
             className={cn(
@@ -120,7 +138,7 @@ export default function EditPage() {
                 : "border-border/60 bg-background text-muted-foreground",
             )}
           >
-            本地修改 {modifiedCount} 条
+            待反馈 {modifiedCount} 条
           </Badge>
           <Button
             variant="outline"
@@ -133,15 +151,37 @@ export default function EditPage() {
             全部重置
           </Button>
           <Button
+            variant="outline"
             size="sm"
             onClick={exportJson}
+            disabled={modifiedCount === 0}
             className="gap-1.5 rounded-full"
           >
             <Download className="size-4" strokeWidth={1.75} />
             导出 JSON
           </Button>
+          <Button
+            size="sm"
+            onClick={submitToGithub}
+            disabled={modifiedCount === 0}
+            className="gap-1.5 rounded-full"
+          >
+            <Send className="size-4" strokeWidth={1.75} />
+            提交给作者
+          </Button>
         </div>
       </header>
+
+      <Card className="rounded-3xl border-pkp-lavender-ink/20 bg-pkp-lavender/40 shadow-none">
+        <CardContent className="flex items-start gap-2 p-4 text-sm text-pkp-lavender-ink">
+          <Info className="mt-0.5 size-4 shrink-0" strokeWidth={1.75} />
+          <div className="flex-1 leading-6">
+            你在这页的修改 <strong>只存在你自己的浏览器</strong>，刷新后还在，但不会同步给其他人。
+            确认某条数据确实有问题、希望修正到主仓库的话，点右上<strong>"提交给作者"</strong>——
+            会把你改过的内容组织成一份简洁的 GitHub issue 让你在浏览器里确认并发送。
+          </div>
+        </CardContent>
+      </Card>
 
       <Card className="overflow-hidden rounded-3xl border-border/60 bg-card shadow-sm">
         <CardContent className="flex flex-col gap-3 p-4">
