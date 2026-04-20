@@ -1,0 +1,246 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+  Pokopia Planner design tokens
+  -----------------------------
+  Aesthetic: "如果无印良品设计了宝可梦的官方应用" — warm off-white base,
+  low-saturation pastel accents, deep-green CTA, generous whitespace.
+
+  Base surfaces
+    - app bg     #FAFAF8  warm near-white
+    - card       #FFFFFF  pure white so cards lift off the cream canvas
+    - foreground #2C2C2C  warm near-black (never pure #000)
+
+  CTA / primary
+    - primary    #2F4B3F  deep pine green (stable, not flashy)
+
+  Pastel accents (used for environment badges & highlights)
+    - pink       #F8BBD0
+    - mint       #BEE8D4
+    - sky        #C6E0F5
+    - yellow     #FDF1C9
+    - peach      #FCE0D0
+    - sand       #EFE0C8
+    - lavender   #D6CEE5
+*/
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-geist-mono);
+  --font-heading: var(--font-sans);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+
+  /* Pokopia pastel palette — env badges, accents, charts */
+  --color-pkp-pink: var(--pkp-pink);
+  --color-pkp-pink-ink: var(--pkp-pink-ink);
+  --color-pkp-mint: var(--pkp-mint);
+  --color-pkp-mint-ink: var(--pkp-mint-ink);
+  --color-pkp-sky: var(--pkp-sky);
+  --color-pkp-sky-ink: var(--pkp-sky-ink);
+  --color-pkp-yellow: var(--pkp-yellow);
+  --color-pkp-yellow-ink: var(--pkp-yellow-ink);
+  --color-pkp-peach: var(--pkp-peach);
+  --color-pkp-peach-ink: var(--pkp-peach-ink);
+  --color-pkp-sand: var(--pkp-sand);
+  --color-pkp-sand-ink: var(--pkp-sand-ink);
+  --color-pkp-lavender: var(--pkp-lavender);
+  --color-pkp-lavender-ink: var(--pkp-lavender-ink);
+
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+:root {
+  /* Warm near-white canvas */
+  --background: oklch(0.984 0.003 95);
+  --foreground: oklch(0.295 0 0);
+
+  /* Cards sit on pure white so they gently lift off the cream */
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.295 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.295 0 0);
+
+  /* CTA / primary — deep pine green */
+  --primary: oklch(0.37 0.04 158);
+  --primary-foreground: oklch(0.98 0.004 95);
+
+  /* Subtle neutrals */
+  --secondary: oklch(0.955 0.005 90);
+  --secondary-foreground: oklch(0.295 0 0);
+  --muted: oklch(0.955 0.005 90);
+  --muted-foreground: oklch(0.5 0.01 85);
+  --accent: oklch(0.95 0.015 60);
+  --accent-foreground: oklch(0.295 0 0);
+
+  --destructive: oklch(0.56 0.17 27);
+
+  --border: oklch(0.92 0.006 85);
+  --input: oklch(0.92 0.006 85);
+  --ring: oklch(0.55 0.055 158);
+
+  /* Chart palette — pastel, low saturation */
+  --chart-1: oklch(0.86 0.075 355);
+  --chart-2: oklch(0.89 0.055 165);
+  --chart-3: oklch(0.87 0.04 240);
+  --chart-4: oklch(0.95 0.06 95);
+  --chart-5: oklch(0.37 0.04 158);
+
+  /* Card-friendly base radius */
+  --radius: 0.875rem;
+
+  /* Pokopia pastel palette */
+  --pkp-pink: oklch(0.88 0.06 355);
+  --pkp-pink-ink: oklch(0.38 0.12 355);
+  --pkp-mint: oklch(0.9 0.05 165);
+  --pkp-mint-ink: oklch(0.38 0.06 165);
+  --pkp-sky: oklch(0.88 0.04 240);
+  --pkp-sky-ink: oklch(0.4 0.08 240);
+  --pkp-yellow: oklch(0.95 0.06 95);
+  --pkp-yellow-ink: oklch(0.45 0.08 80);
+  --pkp-peach: oklch(0.9 0.04 40);
+  --pkp-peach-ink: oklch(0.42 0.1 40);
+  --pkp-sand: oklch(0.9 0.03 80);
+  --pkp-sand-ink: oklch(0.42 0.06 80);
+  --pkp-lavender: oklch(0.87 0.04 300);
+  --pkp-lavender-ink: oklch(0.42 0.08 300);
+
+  --sidebar: oklch(0.984 0.003 95);
+  --sidebar-foreground: oklch(0.295 0 0);
+  --sidebar-primary: oklch(0.37 0.04 158);
+  --sidebar-primary-foreground: oklch(0.98 0.004 95);
+  --sidebar-accent: oklch(0.955 0.005 90);
+  --sidebar-accent-foreground: oklch(0.295 0 0);
+  --sidebar-border: oklch(0.92 0.006 85);
+  --sidebar-ring: oklch(0.55 0.055 158);
+}
+
+.dark {
+  /* Dark mode keeps the warm temperament — charcoal base, not pure black */
+  --background: oklch(0.18 0.005 90);
+  --foreground: oklch(0.94 0.004 90);
+  --card: oklch(0.22 0.006 90);
+  --card-foreground: oklch(0.94 0.004 90);
+  --popover: oklch(0.22 0.006 90);
+  --popover-foreground: oklch(0.94 0.004 90);
+
+  --primary: oklch(0.82 0.05 158);
+  --primary-foreground: oklch(0.22 0.006 90);
+
+  --secondary: oklch(0.27 0.008 90);
+  --secondary-foreground: oklch(0.94 0.004 90);
+  --muted: oklch(0.27 0.008 90);
+  --muted-foreground: oklch(0.68 0.01 90);
+  --accent: oklch(0.3 0.01 90);
+  --accent-foreground: oklch(0.94 0.004 90);
+
+  --destructive: oklch(0.7 0.19 22);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 14%);
+  --ring: oklch(0.6 0.05 158);
+
+  --chart-1: oklch(0.75 0.09 355);
+  --chart-2: oklch(0.78 0.08 165);
+  --chart-3: oklch(0.75 0.07 240);
+  --chart-4: oklch(0.85 0.09 95);
+  --chart-5: oklch(0.7 0.08 158);
+
+  --pkp-pink: oklch(0.4 0.08 355);
+  --pkp-pink-ink: oklch(0.88 0.06 355);
+  --pkp-mint: oklch(0.35 0.05 165);
+  --pkp-mint-ink: oklch(0.88 0.05 165);
+  --pkp-sky: oklch(0.35 0.05 240);
+  --pkp-sky-ink: oklch(0.85 0.05 240);
+  --pkp-yellow: oklch(0.4 0.06 95);
+  --pkp-yellow-ink: oklch(0.92 0.08 95);
+  --pkp-peach: oklch(0.38 0.06 40);
+  --pkp-peach-ink: oklch(0.88 0.05 40);
+  --pkp-sand: oklch(0.38 0.04 80);
+  --pkp-sand-ink: oklch(0.88 0.04 80);
+  --pkp-lavender: oklch(0.35 0.05 300);
+  --pkp-lavender-ink: oklch(0.85 0.05 300);
+
+  --sidebar: oklch(0.22 0.006 90);
+  --sidebar-foreground: oklch(0.94 0.004 90);
+  --sidebar-primary: oklch(0.82 0.05 158);
+  --sidebar-primary-foreground: oklch(0.22 0.006 90);
+  --sidebar-accent: oklch(0.27 0.008 90);
+  --sidebar-accent-foreground: oklch(0.94 0.004 90);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.6 0.05 158);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    @apply font-sans;
+    font-feature-settings: "cv02", "cv03", "cv11", "ss01";
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family:
+      var(--font-inter), var(--font-noto-sc), "PingFang SC", "Hiragino Sans GB",
+      "Microsoft YaHei", system-ui, -apple-system, sans-serif;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Subtle "paper" texture — opt-in via .pkp-paper on any container */
+  .pkp-paper {
+    background-image: radial-gradient(
+      circle at 1px 1px,
+      color-mix(in oklab, var(--foreground) 6%, transparent) 1px,
+      transparent 0
+    );
+    background-size: 24px 24px;
+  }
+
+  /* Card hover lift — use on interactive cards */
+  .pkp-lift {
+    @apply transition-all duration-200 ease-out;
+  }
+  .pkp-lift:hover {
+    @apply -translate-y-0.5 shadow-md;
+  }
+}
