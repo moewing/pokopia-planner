@@ -21,6 +21,7 @@ import {
   teamEnvDistribution,
   type CycleRole,
 } from "@/lib/cycles";
+import { useT } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import {
   ENVIRONMENT_CLASSES,
@@ -29,28 +30,6 @@ import {
   type Environment,
   type Pokemon,
 } from "@/types/pokemon";
-
-const ROLE_LABEL: Record<CycleRole, string> = {
-  litter_wood: "乱撒 · 小圆木",
-  litter_brick: "乱撒 · 软塌塌黏土",
-  litter_iron: "乱撒 · 不可燃垃圾",
-  gather: "分类",
-  process_wood: "伐木",
-  process_brick: "点火 · 黏土→红砖",
-  process_iron: "点火 · 铁→铁条",
-  process_recycle: "回收利用",
-};
-
-const ROLE_HINT: Record<CycleRole, string> = {
-  litter_wood: "持续在地上撒木料",
-  litter_brick: "持续在地上撒黏土",
-  litter_iron: "持续在地上撒垃圾",
-  gather: "把散落的资源整理起来",
-  process_wood: "把小圆木劈成木材",
-  process_brick: "把黏土烧成红砖",
-  process_iron: "把铁块烧成铁条",
-  process_recycle: "把垃圾分解回收为铁",
-};
 
 const CYCLES: CycleId[] = ["wood_cycle", "brick_cycle", "iron_bar_cycle"];
 
@@ -65,8 +44,15 @@ const NON_CYCLE_LITTER_ITEMS = [
   "甜甜蜜",
 ] as const;
 
+const CYCLE_TO_I18N: Record<CycleId, "wood" | "brick" | "iron"> = {
+  wood_cycle: "wood",
+  brick_cycle: "brick",
+  iron_bar_cycle: "iron",
+};
+
 export default function RecipesPage() {
   const playable = usePlayable();
+  const { t } = useT();
   const report = useMemo(() => analyzeCycles(playable), [playable]);
 
   const [teams, setTeams] = useState<
@@ -91,11 +77,10 @@ export default function RecipesPage() {
           Recipes
         </span>
         <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-          资源循环与配方
+          {t("recipes.title")}
         </h1>
         <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
-          Pokopia 世界里有三条持续运转的资源循环，加一条需要玩家投料的一次性加工。
-          每条链选对宝可梦组合，整张地图的资源就能自给自足。
+          {t("recipes.lead")}
         </p>
       </header>
 
@@ -148,9 +133,13 @@ function CycleCard({
   onClear: () => void;
   onPick: (p: Pokemon) => void;
 }) {
+  const { t, locale } = useT();
   const meta = CYCLE_META[cycleId];
   const roles = CYCLE_REQUIREMENTS[cycleId];
   const cycleData = CONSTANTS.resource_cycles[cycleId];
+  const cycleI18nKey = CYCLE_TO_I18N[cycleId];
+  const cycleDisplayName =
+    locale === "zh" ? meta.name : t(`cycles.${cycleI18nKey}`);
 
   return (
     <Card className="overflow-hidden rounded-3xl border-border/60 bg-card shadow-sm">
@@ -166,7 +155,7 @@ function CycleCard({
               <Recycle className="size-5" strokeWidth={1.75} />
             </span>
             <div className="flex flex-col">
-              <span className="font-semibold">{meta.name}</span>
+              <span className="font-semibold">{cycleDisplayName}</span>
               <span className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
                 {cycleId.replace("_", " ")}
               </span>
@@ -197,15 +186,15 @@ function CycleCard({
           <div className="text-xs text-muted-foreground">
             {report.complete ? (
               <span>
-                ✅ 数据里共
-                <span className="mx-1 font-mono text-foreground">
-                  {totalCandidates(report.staffing)}
-                </span>
-                只宝可梦可参与，各环节均可填
+                {t("recipes.complete", { n: totalCandidates(report.staffing) })}
               </span>
             ) : (
               <span className="text-destructive">
-                ⚠ 缺少环节：{report.missingRoles.map((r) => ROLE_LABEL[r]).join(" / ")}
+                {t("recipes.missingRoles", {
+                  roles: report.missingRoles
+                    .map((r) => t(`roles.${r}`))
+                    .join(" / "),
+                })}
               </span>
             )}
           </div>
@@ -217,7 +206,7 @@ function CycleCard({
                 onClick={onClear}
                 className="rounded-full text-xs text-muted-foreground"
               >
-                清空
+                {t("recipes.clearTeam")}
               </Button>
             ) : null}
             <Button
@@ -227,7 +216,7 @@ function CycleCard({
               className="rounded-full gap-1.5"
             >
               <Sparkles className="size-4" strokeWidth={1.75} />
-              一键推荐组合
+              {t("recipes.recommend")}
             </Button>
           </div>
         </div>
@@ -300,7 +289,14 @@ function RoleNode({
   picked: Pokemon | null;
   onPick: (p: Pokemon) => void;
 }) {
+  const { t } = useT();
   const ok = count > 0;
+  const kind: "process" | "gather" | "litter" =
+    role.split("_")[0] === "process"
+      ? "process"
+      : role === "gather"
+        ? "gather"
+        : "litter";
   return (
     <div
       className={cn(
@@ -311,17 +307,13 @@ function RoleNode({
       )}
     >
       <span className="text-[10px] uppercase tracking-widest text-muted-foreground">
-        {role.split("_")[0] === "process"
-          ? "加工"
-          : role === "gather"
-            ? "分类"
-            : "乱撒"}
+        {t(`roleKind.${kind}`)}
       </span>
       <span className="text-sm font-medium leading-tight">
-        {ROLE_LABEL[role]}
+        {t(`roles.${role}`)}
       </span>
       <span className="text-[11px] text-muted-foreground">
-        {ROLE_HINT[role]}
+        {t(`roleHints.${role}`)}
       </span>
       <div className="mt-auto flex items-center justify-between pt-1">
         <span
@@ -330,7 +322,9 @@ function RoleNode({
             ok ? "text-muted-foreground" : "text-destructive",
           )}
         >
-          {count > 0 ? `${count} 只候选` : "无候选"}
+          {count > 0
+            ? `${count} ${t("recipes.candidates")}`
+            : t("recipes.noCandidates")}
         </span>
       </div>
 
@@ -366,6 +360,7 @@ function TeamPreview({
   team: Pokemon[];
   onPick: (p: Pokemon) => void;
 }) {
+  const { t, translateEnv } = useT();
   const envDist = teamEnvDistribution(team);
   const envEntries = Object.entries(envDist).sort((a, b) => b[1] - a[1]);
 
@@ -373,7 +368,7 @@ function TeamPreview({
     <div className="flex flex-col gap-3 rounded-2xl border border-border/60 bg-muted/30 p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <span className="text-xs font-medium text-foreground/80">
-          推荐阵容 · {team.length} 只
+          {t("recipes.teamPreview", { n: team.length })}
         </span>
         <div className="flex flex-wrap items-center gap-1">
           {envEntries.map(([env, n]) => {
@@ -390,7 +385,7 @@ function TeamPreview({
                 )}
               >
                 <span aria-hidden>{ENVIRONMENT_EMOJI[env as Environment]}</span>
-                {env} × {n}
+                {translateEnv(env as Environment)} × {n}
               </Badge>
             );
           })}
@@ -416,8 +411,7 @@ function TeamPreview({
       </div>
       {envEntries.length > 1 ? (
         <p className="text-[11px] leading-5 text-muted-foreground">
-          ⚑ 这个组合跨了 {envEntries.length} 种环境，可在同一张地图里建不同环境的 4×4 格子，
-          让每只宝可梦都住在自己喜欢的格子里。
+          {t("recipes.envCrossNote", { n: envEntries.length })}
         </p>
       ) : null}
     </div>
@@ -435,7 +429,13 @@ function PaperCard({
   report: ReturnType<typeof analyzeCycles>["paper"];
   onPick: (p: Pokemon) => void;
 }) {
+  const { t, locale } = useT();
   const meta = CONSTANTS.one_shot_processing.paper;
+  const displayName = locale === "zh" ? meta.name_cn : t("cycles.paper");
+  const sourceLocal =
+    locale === "zh" ? meta.source : "Waste paper picked up in the world";
+  const processorLocal =
+    locale === "zh" ? meta.processor : t("roles.process_recycle");
   return (
     <Card className="overflow-hidden rounded-3xl border-border/60 bg-card shadow-sm">
       <CardContent className="flex flex-col gap-5 p-6 sm:p-7">
@@ -445,24 +445,27 @@ function PaperCard({
               <Sparkles className="size-5" strokeWidth={1.75} />
             </span>
             <div className="flex flex-col">
-              <span className="font-semibold">{meta.name_cn}</span>
+              <span className="font-semibold">{displayName}</span>
               <span className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
-                one-shot · paper
+                {t("recipes.paperCard.oneShotSource")}
               </span>
             </div>
           </div>
           <span className="rounded-full bg-muted/60 px-2.5 py-1 text-xs text-muted-foreground">
-            {meta.source} → 交给 {meta.processor}
+            {t("recipes.paperCard.sourceProcessor", {
+              source: sourceLocal,
+              processor: processorLocal,
+            })}
           </span>
         </div>
 
         <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
           <span>
-            {report.doable ? "可做" : "缺处理者"} · 当前可用
-            <span className="mx-1 font-mono text-foreground">
-              {report.processors.length}
-            </span>
-            只"回收利用"宝可梦
+            {report.doable
+              ? t("recipes.paperCard.doable")
+              : t("recipes.paperCard.notDoable")}
+            {" · "}
+            {t("recipes.paperCard.processorCount", { n: report.processors.length })}
           </span>
         </div>
 
@@ -496,6 +499,7 @@ function PaperCard({
 // --------------------------------------------------------------------------
 
 function NonCycleLitterCard() {
+  const { t, translateLitteredItem } = useT();
   const allPokemon = useAllPokemon();
   const tally = useMemo(() => {
     const map = new Map<string, Pokemon[]>();
@@ -514,11 +518,13 @@ function NonCycleLitterCard() {
       <CardContent className="flex flex-col gap-4 p-6 sm:p-7">
         <div className="flex flex-col gap-1">
           <span className="text-xs uppercase tracking-widest text-muted-foreground">
-            Non-cycle · collect only
+            {t("recipes.nonCycle.eyebrow")}
           </span>
-          <h2 className="text-lg font-semibold">其他乱撒物</h2>
+          <h2 className="text-lg font-semibold">
+            {t("recipes.nonCycle.title")}
+          </h2>
           <p className="text-sm text-muted-foreground">
-            游戏里这些材料目前没有对应的加工循环——捡起来收好就行，不用特意为它们配队。
+            {t("recipes.nonCycle.lead")}
           </p>
         </div>
         <Separator className="bg-border/60" />
@@ -529,9 +535,11 @@ function NonCycleLitterCard() {
               className="flex flex-col gap-2 rounded-2xl border border-border/60 bg-background p-3"
             >
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">{item}</span>
+                <span className="text-sm font-medium">
+                  {translateLitteredItem(item)}
+                </span>
                 <span className="font-mono text-[11px] text-muted-foreground">
-                  {pokemons.length} 只
+                  {t("recipes.nonCycle.count", { n: pokemons.length })}
                 </span>
               </div>
               <div className="flex -space-x-2">

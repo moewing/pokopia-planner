@@ -18,6 +18,7 @@ import { tasteToArray } from "@/lib/data";
 import { usePlayable } from "@/store/overrides-store";
 import { rolesFor } from "@/lib/cycles";
 import { similarity } from "@/lib/similarity";
+import { useT } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import {
   ENVIRONMENT_CLASSES,
@@ -41,6 +42,7 @@ interface Props {
  */
 export function PokemonDetail({ pokemon, onOpenChange, onSelect }: Props) {
   const playable = usePlayable();
+  const { t, translateEnv, translateTaste, translateSpecialty, translateLitteredItem } = useT();
   const related = useMemo(() => {
     if (!pokemon) return { cycleMates: [] as Pokemon[], similar: [] as Array<{ p: Pokemon; score: number }> };
 
@@ -144,7 +146,7 @@ export function PokemonDetail({ pokemon, onOpenChange, onSelect }: Props) {
                     ) : null}
                   </DialogTitle>
                   <DialogDescription className="sr-only">
-                    {pokemon.name} 的详细信息
+                    {pokemon.name}
                   </DialogDescription>
                   <div className="flex flex-wrap items-center gap-1.5 pt-1">
                     {envCls && pokemon.env ? (
@@ -160,17 +162,17 @@ export function PokemonDetail({ pokemon, onOpenChange, onSelect }: Props) {
                         <span aria-hidden>
                           {ENVIRONMENT_EMOJI[pokemon.env as Environment]}
                         </span>
-                        {pokemon.env}
+                        {translateEnv(pokemon.env as Environment)}
                       </Badge>
                     ) : null}
-                    {tastes.map((t) => (
+                    {tastes.map((ts) => (
                       <Badge
-                        key={t}
+                        key={ts}
                         variant="outline"
                         className="gap-1 rounded-full border-border/60 bg-muted/60 px-2.5 py-0.5 text-xs text-muted-foreground"
                       >
-                        <span aria-hidden>{TASTE_EMOJI[t]}</span>
-                        {t}
+                        <span aria-hidden>{TASTE_EMOJI[ts]}</span>
+                        {translateTaste(ts)}
                       </Badge>
                     ))}
                     {!pokemon.is_playable && (
@@ -179,7 +181,7 @@ export function PokemonDetail({ pokemon, onOpenChange, onSelect }: Props) {
                         className="gap-1 rounded-full border-border/60 bg-muted px-2.5 py-0.5 text-xs text-muted-foreground"
                       >
                         <Lock className="size-3" strokeWidth={2} />
-                        不可入住
+                        {t("common.notPlayable")}
                       </Badge>
                     )}
                   </div>
@@ -190,7 +192,7 @@ export function PokemonDetail({ pokemon, onOpenChange, onSelect }: Props) {
             <Separator className="bg-border/60" />
 
             <section className="grid gap-5 sm:grid-cols-2">
-              <Field label="特长">
+              <Field label={t("detail.specialties")}>
                 <div className="flex flex-wrap gap-1.5">
                   {pokemon.specialties.map((s, i) => (
                     <Badge
@@ -198,7 +200,7 @@ export function PokemonDetail({ pokemon, onOpenChange, onSelect }: Props) {
                       variant="outline"
                       className="rounded-full border-border/60 bg-background px-2.5 py-0.5 text-xs"
                     >
-                      {s}
+                      {translateSpecialty(s)}
                       <span className="ml-1 font-mono text-[10px] text-muted-foreground">
                         {pokemon.specialties_en[i]}
                       </span>
@@ -207,7 +209,7 @@ export function PokemonDetail({ pokemon, onOpenChange, onSelect }: Props) {
                 </div>
               </Field>
               {pokemon.littered_items.length > 0 ? (
-                <Field label="乱撒物">
+                <Field label={t("detail.litteredItems")}>
                   <div className="flex flex-wrap gap-1.5">
                     {pokemon.littered_items.map((it) => (
                       <Badge
@@ -215,14 +217,14 @@ export function PokemonDetail({ pokemon, onOpenChange, onSelect }: Props) {
                         variant="outline"
                         className="rounded-full border-pkp-peach-ink/15 bg-pkp-peach px-2.5 py-0.5 text-xs text-pkp-peach-ink"
                       >
-                        {it}
+                        {translateLitteredItem(it)}
                       </Badge>
                     ))}
                   </div>
                 </Field>
               ) : null}
               {pokemon.likes.length > 0 ? (
-                <Field label="喜欢事物" className="sm:col-span-2">
+                <Field label={t("detail.likes")} className="sm:col-span-2">
                   <div className="flex flex-wrap gap-1.5">
                     {pokemon.likes.map((l) => (
                       <Badge
@@ -237,22 +239,22 @@ export function PokemonDetail({ pokemon, onOpenChange, onSelect }: Props) {
                 </Field>
               ) : null}
               {pokemon.type && pokemon.type.length > 0 ? (
-                <Field label="属性">
+                <Field label={t("detail.types")}>
                   <div className="flex flex-wrap gap-1.5">
-                    {pokemon.type.map((t) => (
+                    {pokemon.type.map((ty) => (
                       <Badge
-                        key={t}
+                        key={ty}
                         variant="outline"
                         className="rounded-full border-border/60 bg-background px-2.5 py-0.5 text-xs"
                       >
-                        {t}
+                        {ty}
                       </Badge>
                     ))}
                   </div>
                 </Field>
               ) : null}
               {pokemon.habitats.length > 0 ? (
-                <Field label="推荐栖息地">
+                <Field label={t("detail.habitats")}>
                   <div className="flex flex-wrap gap-1.5">
                     {pokemon.habitats.map((h) => (
                       <Badge
@@ -267,7 +269,7 @@ export function PokemonDetail({ pokemon, onOpenChange, onSelect }: Props) {
                 </Field>
               ) : null}
               {pokemon.notes.length > 0 ? (
-                <Field label="备注" className="sm:col-span-2">
+                <Field label={t("detail.notes")} className="sm:col-span-2">
                   <ul className="list-disc space-y-0.5 pl-4 text-sm text-muted-foreground">
                     {pokemon.notes.map((n, i) => (
                       <li key={i}>{n}</li>
@@ -282,7 +284,7 @@ export function PokemonDetail({ pokemon, onOpenChange, onSelect }: Props) {
                 <Separator className="bg-border/60" />
                 <section className="flex flex-col gap-3">
                   <h3 className="text-sm font-semibold">
-                    可以和它组资源循环的宝可梦
+                    {t("detail.cycleMates")}
                   </h3>
                   <MiniList list={related.cycleMates} onSelect={onSelect} />
                 </section>
@@ -294,12 +296,13 @@ export function PokemonDetail({ pokemon, onOpenChange, onSelect }: Props) {
                 <Separator className="bg-border/60" />
                 <section className="flex flex-col gap-3">
                   <h3 className="text-sm font-semibold">
-                    气味相投 Top {related.similar.length}
+                    {t("detail.similar", { n: related.similar.length })}
                   </h3>
                   <MiniList
                     list={related.similar.map((x) => x.p)}
                     scores={related.similar.map((x) => x.score)}
                     onSelect={onSelect}
+                    scoreSuffix={t("detail.scoreSuffix")}
                   />
                 </section>
               </>
@@ -334,10 +337,12 @@ function MiniList({
   list,
   scores,
   onSelect,
+  scoreSuffix = "",
 }: {
   list: Pokemon[];
   scores?: number[];
   onSelect?: (p: Pokemon) => void;
+  scoreSuffix?: string;
 }) {
   return (
     <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
@@ -353,7 +358,9 @@ function MiniList({
             <span className="truncate text-sm font-medium">{p.name}</span>
             <span className="text-[10px] font-mono text-muted-foreground">
               #{String(p.id).padStart(3, "0")}
-              {scores && scores[idx] != null ? ` · ${scores[idx]}分` : ""}
+              {scores && scores[idx] != null
+                ? ` · ${scores[idx]}${scoreSuffix}`
+                : ""}
             </span>
           </div>
         </button>

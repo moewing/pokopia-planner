@@ -33,6 +33,7 @@ import {
   planEarlyMode,
 } from "@/lib/planner";
 import { commonOverlap } from "@/lib/similarity";
+import { useT } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import {
   ENVIRONMENT_CLASSES,
@@ -56,6 +57,7 @@ interface Props {
 
 export function ManualPlanner({ onPick }: Props) {
   const selected = useSelectedPokemon();
+  const { t } = useT();
   const maps = useManualPlanStore((s) => s.maps);
   const addCell = useManualPlanStore((s) => s.addCell);
   const removeCell = useManualPlanStore((s) => s.removeCell);
@@ -123,7 +125,7 @@ export function ManualPlanner({ onPick }: Props) {
     return (
       <Card className="rounded-3xl border-dashed border-border/60 bg-card/60 shadow-none">
         <CardContent className="p-10 text-center text-sm text-muted-foreground">
-          先在"调整选择"里挑几只宝可梦，再来手动调整。
+          {t("manual.empty")}
         </CardContent>
       </Card>
     );
@@ -136,10 +138,10 @@ export function ManualPlanner({ onPick }: Props) {
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex flex-col gap-0.5">
               <span className="text-xs uppercase tracking-widest text-muted-foreground">
-                Pool · 未分配
+                {t("manual.poolEyebrow")}
               </span>
               <span className="text-sm font-medium">
-                {pool.length} 只待分配 · 点一只 → 再点目标格子放入
+                {t("manual.poolCaption", { n: pool.length })}
               </span>
             </div>
             <div className="flex items-center gap-2">
@@ -150,17 +152,17 @@ export function ManualPlanner({ onPick }: Props) {
                 className="gap-1.5 rounded-full"
               >
                 <Wand2 className="size-4" strokeWidth={1.75} />
-                从自动方案填入
+                {t("manual.autoFill")}
               </Button>
               <Button
                 size="sm"
                 variant="ghost"
                 onClick={() => {
-                  if (confirm("清空所有手动分配？")) clearAll();
+                  if (confirm(t("manual.clearAllConfirm"))) clearAll();
                 }}
                 className="rounded-full text-muted-foreground"
               >
-                清空
+                {t("manual.clearAll")}
               </Button>
             </div>
           </div>
@@ -169,7 +171,7 @@ export function ManualPlanner({ onPick }: Props) {
 
           {pool.length === 0 ? (
             <span className="text-xs text-muted-foreground">
-              全部宝可梦都已分配好了 ✅
+              {t("manual.allAssigned")}
             </span>
           ) : (
             <div className="flex flex-wrap gap-1.5">
@@ -191,8 +193,9 @@ export function ManualPlanner({ onPick }: Props) {
 
           {pickedPokemonId != null ? (
             <div className="rounded-2xl border border-primary/40 bg-primary/5 px-3 py-2 text-xs text-primary">
-              🫱 已选中 {byId.get(pickedPokemonId)?.name} — 点下方任一格子把它放进去。
-              再点一次取消。
+              {t("manual.pickedHint", {
+                name: byId.get(pickedPokemonId)?.name ?? "",
+              })}
             </div>
           ) : null}
         </CardContent>
@@ -212,7 +215,7 @@ export function ManualPlanner({ onPick }: Props) {
                   over && "text-destructive",
                 )}
               >
-                地图 {MAP_LABELS[i]}
+                {t("manual.mapTab", { letter: MAP_LABELS[i] })}
                 <span
                   className={cn(
                     "font-mono text-[10px]",
@@ -262,6 +265,7 @@ function PoolChip({
   const cls = pokemon.env
     ? ENVIRONMENT_CLASSES[pokemon.env as Environment]
     : null;
+  // intentionally not translating env letter emoji only
   return (
     <div className="flex items-center">
       <button
@@ -336,6 +340,7 @@ function MapBoard({
   const total = allPokemon.length;
   const cycleReport = useMemo(() => analyzeCycles(allPokemon), [allPokemon]);
   const overlap = useMemo(() => commonOverlap(allPokemon), [allPokemon]);
+  const { t } = useT();
 
   return (
     <Card className="rounded-3xl border-border/60 bg-card shadow-sm">
@@ -347,9 +352,11 @@ function MapBoard({
               {MAP_LABELS[mapIdx]}
             </span>
             <div className="flex flex-col">
-              <span className="font-semibold">地图 {MAP_LABELS[mapIdx]}</span>
+              <span className="font-semibold">
+                {t("manual.mapTab", { letter: MAP_LABELS[mapIdx] })}
+              </span>
               <span className="text-[11px] text-muted-foreground">
-                手动编辑 · 点格子放入已选中的宝可梦
+                {t("manual.mapHint")}
               </span>
             </div>
           </div>
@@ -372,9 +379,9 @@ function MapBoard({
           <div className="flex flex-wrap items-center gap-1.5">
             {(
               [
-                ["wood", cycleReport.wood_cycle, "木材"],
-                ["brick", cycleReport.brick_cycle, "红砖"],
-                ["iron", cycleReport.iron_bar_cycle, "铁条"],
+                ["wood", cycleReport.wood_cycle, t("plannerEarly.cycleChips.wood")],
+                ["brick", cycleReport.brick_cycle, t("plannerEarly.cycleChips.brick")],
+                ["iron", cycleReport.iron_bar_cycle, t("plannerEarly.cycleChips.iron")],
               ] as const
             ).map(([k, rep, label]) => (
               <span
@@ -386,7 +393,13 @@ function MapBoard({
                     : "border-border/60 bg-muted/40 text-muted-foreground",
                 )}
                 title={
-                  rep.complete ? "循环完整" : `缺 ${rep.missingRoles.join("/")}`
+                  rep.complete
+                    ? t("plannerEarly.cycleChips.completeTip")
+                    : t("plannerEarly.cycleChips.missingTip", {
+                        roles: rep.missingRoles
+                          .map((r) => t(`roles.${r}`))
+                          .join("/"),
+                      })
                 }
               >
                 {rep.complete ? (
@@ -403,7 +416,7 @@ function MapBoard({
         {/* Cells grid */}
         {cells.length === 0 ? (
           <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-border/60 bg-muted/30 p-6 text-center text-sm text-muted-foreground">
-            <p>这张地图还没有格子。先选一个环境加一个 4×4 格子吧：</p>
+            <p>{t("manual.emptyMap")}</p>
             <EnvPickerButtons onPick={onAddCell} />
           </div>
         ) : (
@@ -425,7 +438,7 @@ function MapBoard({
             </div>
             <div className="flex flex-col items-start gap-2">
               <span className="text-[11px] uppercase tracking-widest text-muted-foreground">
-                添加新格子（选环境）
+                {t("manual.newCellLabel")}
               </span>
               <EnvPickerButtons onPick={onAddCell} />
             </div>
@@ -437,10 +450,10 @@ function MapBoard({
           <div className="rounded-2xl border border-dashed border-border/60 bg-muted/30 p-3">
             <div className="flex items-center justify-between gap-2 pb-2">
               <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-                重叠区推荐物品
+                {t("manual.overlapLabel")}
               </span>
               <span className="text-[11px] text-muted-foreground">
-                覆盖 ≥ 2 只
+                {t("manual.overlapCoverage")}
               </span>
             </div>
             <div className="flex flex-wrap gap-1">
@@ -472,6 +485,7 @@ function EnvPickerButtons({
 }: {
   onPick: (env: Environment) => void;
 }) {
+  const { translateEnv } = useT();
   return (
     <div className="flex flex-wrap gap-1.5">
       {ALL_ENVS.map((e) => {
@@ -490,7 +504,7 @@ function EnvPickerButtons({
           >
             <Plus className="size-3" strokeWidth={2} />
             <span aria-hidden>{ENVIRONMENT_EMOJI[e]}</span>
-            {e}
+            {translateEnv(e)}
           </button>
         );
       })}
@@ -521,6 +535,7 @@ function CellEditor({
   onRemovePokemon: (pokemonId: number) => void;
   onPickDetail: (p: Pokemon) => void;
 }) {
+  const { t, translateEnv } = useT();
   const cls = ENVIRONMENT_CLASSES[cell.env];
   const full = cell.pokemonIds.length >= PER_CELL;
   const pokemons = cell.pokemonIds
@@ -559,10 +574,12 @@ function CellEditor({
                     ? `${eCls.bg} ${eCls.text} ${eCls.border} px-2 py-0.5`
                     : "size-5 border-border/60 bg-background hover:bg-muted/60",
                 )}
-                title={e}
+                title={translateEnv(e)}
               >
                 <span aria-hidden>{ENVIRONMENT_EMOJI[e]}</span>
-                {active ? <span className="ml-1">{e}</span> : null}
+                {active ? (
+                  <span className="ml-1">{translateEnv(e)}</span>
+                ) : null}
               </button>
             );
           })}
@@ -579,7 +596,7 @@ function CellEditor({
               onRemove();
             }}
             className="size-6 rounded-full text-muted-foreground"
-            aria-label="删除格子"
+            aria-label={t("manual.deleteCell")}
           >
             <Trash2 className="size-3.5" strokeWidth={1.75} />
           </Button>
@@ -589,7 +606,9 @@ function CellEditor({
       {/* Pokemon in cell */}
       {pokemons.length === 0 ? (
         <div className="py-2 text-center text-[11px] text-muted-foreground">
-          {selectable ? "点这里放入已选的宝可梦" : "（空格子）"}
+          {selectable
+            ? t("manual.cellPlaceholder")
+            : t("manual.cellEmpty")}
         </div>
       ) : (
         <div className="flex flex-wrap gap-1.5">
@@ -601,7 +620,7 @@ function CellEditor({
                 type="button"
                 onClick={(ev) => {
                   ev.stopPropagation();
-                  if (confirm(`把 ${p.name} 从格子里移出？`))
+                  if (confirm(t("manual.removeConfirm", { name: p.name })))
                     onRemovePokemon(p.id);
                 }}
                 onDoubleClick={(ev) => {
@@ -616,7 +635,11 @@ function CellEditor({
                 )}
                 title={
                   mismatch
-                    ? `${p.name} 喜欢 ${p.env}，这个格子是 ${cell.env}`
+                    ? t("manual.envMismatch", {
+                        name: p.name,
+                        env: translateEnv(p.env as Environment),
+                        cell: translateEnv(cell.env),
+                      })
                     : p.name
                 }
               >

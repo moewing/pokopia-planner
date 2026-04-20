@@ -21,6 +21,7 @@ import {
 } from "@/components/pokedex-filters";
 import { tastesOverlap } from "@/lib/data";
 import { useAllPokemon } from "@/store/overrides-store";
+import { useT } from "@/lib/i18n";
 import type { Pokemon } from "@/types/pokemon";
 
 function matches(p: Pokemon, f: PokedexFilterState): boolean {
@@ -63,6 +64,7 @@ function matches(p: Pokemon, f: PokedexFilterState): boolean {
 
 export default function PokedexPage() {
   const allPokemon = useAllPokemon();
+  const { t } = useT();
   const [filters, setFilters] = useState<PokedexFilterState>(emptyFilters);
   const [open, setOpen] = useState<Pokemon | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -102,15 +104,13 @@ export default function PokedexPage() {
               Pokédex
             </span>
             <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-              图鉴
+              {t("pokedex.title")}
             </h1>
             <p className="text-sm text-muted-foreground">
-              <span className="font-mono text-foreground">
-                {filtered.length}
-              </span>
-              {" / "}
-              <span className="font-mono">{allPokemon.length}</span> 只宝可梦
-              · 点卡片查看详情
+              {t("pokedex.caption", {
+                matched: filtered.length,
+                total: allPokemon.length,
+              })}
             </p>
           </div>
 
@@ -126,7 +126,7 @@ export default function PokedexPage() {
               }
             >
               <SlidersHorizontal className="size-4" strokeWidth={1.75} />
-              筛选
+              {t("pokedex.filterButton")}
               {activeCount > 0 ? (
                 <span className="inline-flex size-5 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
                   {activeCount}
@@ -138,7 +138,7 @@ export default function PokedexPage() {
               className="w-full max-w-sm overflow-y-auto border-border/60 p-6 sm:w-96"
             >
               <SheetHeader className="p-0 pb-4">
-                <SheetTitle>筛选</SheetTitle>
+                <SheetTitle>{t("pokedex.filterButton")}</SheetTitle>
               </SheetHeader>
               <PokedexFilters
                 state={filters}
@@ -175,14 +175,16 @@ export default function PokedexPage() {
 }
 
 function EmptyState({ onReset }: { onReset: () => void }) {
+  const { t } = useT();
   return (
     <div className="flex flex-col items-center gap-3 rounded-3xl border border-dashed border-border/60 bg-card/50 p-12 text-center">
       <span className="text-4xl" aria-hidden>
         🫧
       </span>
       <p className="text-sm text-muted-foreground">
-        没有匹配的宝可梦。<br />
-        试试减少几个筛选条件。
+        {t("pokedex.empty")}
+        <br />
+        {t("pokedex.emptyHint")}
       </p>
       <Button
         variant="outline"
@@ -190,7 +192,7 @@ function EmptyState({ onReset }: { onReset: () => void }) {
         onClick={onReset}
         className="rounded-full"
       >
-        清空筛选
+        {t("pokedex.clearFilters")}
       </Button>
     </div>
   );

@@ -19,6 +19,7 @@ import {
   usePlannerStore,
   type PlannerSelectionState,
 } from "@/store/planner-store";
+import { useT } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import {
   ENVIRONMENT_CLASSES,
@@ -40,7 +41,7 @@ interface Props {
 
 /** Reusable pool selector sheet, driven by either planner store. */
 export function PlannerSelector({
-  triggerLabel = "调整选择",
+  triggerLabel,
   triggerVariant = "outline",
   store = usePlannerStore,
   compact = false,
@@ -52,6 +53,8 @@ export function PlannerSelector({
   const addAllPlayable = store((s) => s.addAllPlayable);
   const addCycleStarterPack = store((s) => s.addCycleStarterPack);
 
+  const { t, translateEnv } = useT();
+  const effectiveTriggerLabel = triggerLabel ?? t("selector.trigger");
   const [query, setQuery] = useState("");
   const [envFilter, setEnvFilter] = useState<Environment | null>(null);
 
@@ -92,7 +95,7 @@ export function PlannerSelector({
         }
       >
         <Plus className="size-4" strokeWidth={1.75} />
-        {triggerLabel}
+        {effectiveTriggerLabel}
         {selectedIds.length > 0 ? (
           <span className="font-mono text-xs">· {selectedIds.length}</span>
         ) : null}
@@ -102,7 +105,7 @@ export function PlannerSelector({
         className="flex w-full flex-col gap-4 overflow-hidden border-border/60 p-0 sm:max-w-md"
       >
         <SheetHeader className="border-b border-border/60 p-5 pb-4">
-          <SheetTitle>选择宝可梦</SheetTitle>
+          <SheetTitle>{t("selector.title")}</SheetTitle>
           {!compact ? (
             <div className="flex flex-wrap gap-2 pt-1">
               <Button
@@ -111,7 +114,7 @@ export function PlannerSelector({
                 onClick={addCycleStarterPack}
                 className="rounded-full text-xs"
               >
-                循环入门 10 只
+                {t("selector.starterPack")}
               </Button>
               <Button
                 size="sm"
@@ -119,7 +122,7 @@ export function PlannerSelector({
                 onClick={addAllPlayable}
                 className="rounded-full text-xs"
               >
-                加满 287 只
+                {t("selector.addAll")}
               </Button>
               <Button
                 size="sm"
@@ -127,7 +130,7 @@ export function PlannerSelector({
                 onClick={clear}
                 className="rounded-full text-xs text-muted-foreground"
               >
-                清空
+                {t("selector.clear")}
               </Button>
             </div>
           ) : (
@@ -138,7 +141,7 @@ export function PlannerSelector({
                 onClick={clear}
                 className="rounded-full text-xs text-muted-foreground"
               >
-                清空
+                {t("selector.clear")}
               </Button>
             </div>
           )}
@@ -151,7 +154,7 @@ export function PlannerSelector({
               strokeWidth={1.75}
             />
             <Input
-              placeholder="搜索名字 / 编号 / 特长"
+              placeholder={t("selector.searchPlaceholder")}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               className="rounded-full pl-9"
@@ -168,7 +171,7 @@ export function PlannerSelector({
                   : "border-border/60 bg-background text-foreground/70 hover:bg-muted/60",
               )}
             >
-              全部
+              {t("selector.filterAll")}
             </button>
             {(Object.keys(ENVIRONMENT_CLASSES) as Environment[]).map((e) => {
               const cls = ENVIRONMENT_CLASSES[e];
@@ -186,26 +189,28 @@ export function PlannerSelector({
                   )}
                 >
                   <span aria-hidden>{ENVIRONMENT_EMOJI[e]}</span>
-                  {e}
+                  {translateEnv(e)}
                 </button>
               );
             })}
           </div>
           <div className="flex items-center justify-between text-xs">
-            <span className="text-muted-foreground">
-              <span className="font-mono text-foreground">{filtered.length}</span>
-              {" · 已选 "}
-              <span
-                className={cn(
-                  "font-mono",
-                  maxHint && selectedIds.length > maxHint
-                    ? "text-destructive"
-                    : "text-foreground",
-                )}
-              >
-                {selectedIds.length}
-                {maxHint ? ` / ${maxHint}` : ""}
-              </span>
+            <span
+              className={cn(
+                "text-muted-foreground",
+                maxHint && selectedIds.length > maxHint && "text-destructive",
+              )}
+            >
+              {maxHint
+                ? t("selector.resultCountWithMax", {
+                    matched: filtered.length,
+                    selected: selectedIds.length,
+                    max: maxHint,
+                  })
+                : t("selector.resultCountLabel", {
+                    matched: filtered.length,
+                    selected: selectedIds.length,
+                  })}
             </span>
           </div>
         </div>
@@ -236,6 +241,7 @@ function PoolRow({
   selected: boolean;
   onToggle: () => void;
 }) {
+  const { translateEnv, translateSpecialty } = useT();
   const cls = pokemon.env
     ? ENVIRONMENT_CLASSES[pokemon.env as Environment]
     : null;
@@ -273,10 +279,12 @@ function PoolRow({
                 <span aria-hidden>
                   {ENVIRONMENT_EMOJI[pokemon.env as Environment]}
                 </span>
-                {pokemon.env}
+                {translateEnv(pokemon.env as Environment)}
               </span>
             ) : null}
-            <span className="truncate">{pokemon.specialties.join(" / ")}</span>
+            <span className="truncate">
+              {pokemon.specialties.map((s) => translateSpecialty(s)).join(" / ")}
+            </span>
           </span>
         </div>
         <div

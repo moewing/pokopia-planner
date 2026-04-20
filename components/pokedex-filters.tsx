@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/accordion";
 import { CONSTANTS } from "@/lib/data";
 import { useAllPokemon } from "@/store/overrides-store";
+import { useT } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import {
   ENVIRONMENT_CLASSES,
@@ -29,10 +30,11 @@ import {
 } from "@/types/pokemon";
 
 /** Grouping of specialties so filters feel semantic, not alphabetical. */
-const SPECIALTY_GROUPS: Array<{ label: string; items: Specialty[] }> = [
-  { label: "资源循环", items: ["乱撒", "分类", "伐木", "点火", "回收利用"] },
+type SpecialtyGroupKey = "cycle" | "function" | "action" | "atmosphere";
+const SPECIALTY_GROUPS: Array<{ key: SpecialtyGroupKey; items: Specialty[] }> = [
+  { key: "cycle", items: ["乱撒", "分类", "伐木", "点火", "回收利用"] },
   {
-    label: "功能",
+    key: "function",
     items: [
       "栽培",
       "滋润",
@@ -47,7 +49,7 @@ const SPECIALTY_GROUPS: Array<{ label: string; items: Specialty[] }> = [
     ],
   },
   {
-    label: "动作",
+    key: "action",
     items: [
       "飞翔",
       "瞬间移动",
@@ -62,16 +64,8 @@ const SPECIALTY_GROUPS: Array<{ label: string; items: Specialty[] }> = [
     ],
   },
   {
-    label: "气氛",
-    items: [
-      "带动气氛",
-      "DJ",
-      "开派对",
-      "梦岛",
-      "哈欠",
-      "贪吃鬼",
-      "不明",
-    ],
+    key: "atmosphere",
+    items: ["带动气氛", "DJ", "开派对", "梦岛", "哈欠", "贪吃鬼", "不明"],
   },
 ];
 
@@ -124,6 +118,7 @@ interface Props {
 
 export function PokedexFilters({ state, setState, reset, resultCount }: Props) {
   const allPokemon = useAllPokemon();
+  const { t, translateEnv, translateTaste, translateSpecialty, translateLitteredItem } = useT();
 
   // Unique lists derived from the current (possibly-overridden) dataset
   const uniqueLittered = useMemo(() => {
@@ -156,7 +151,7 @@ export function PokedexFilters({ state, setState, reset, resultCount }: Props) {
           strokeWidth={1.75}
         />
         <Input
-          placeholder="搜索名字 / 编号 / 英文特长"
+          placeholder={t("pokedex.searchPlaceholder")}
           value={state.query}
           onChange={(e) => setState({ query: e.target.value })}
           className="rounded-full pl-9"
@@ -167,7 +162,7 @@ export function PokedexFilters({ state, setState, reset, resultCount }: Props) {
       <div className="flex items-center justify-between text-xs">
         <span className="text-muted-foreground">
           <span className="font-mono text-foreground">{resultCount}</span>{" "}
-          只匹配
+          {t("pokedex.matched")}
         </span>
         {active > 0 ? (
           <Button
@@ -177,7 +172,7 @@ export function PokedexFilters({ state, setState, reset, resultCount }: Props) {
             className="h-7 gap-1 rounded-full px-2 text-xs text-muted-foreground"
           >
             <X className="size-3" strokeWidth={2} />
-            清空筛选
+            {t("pokedex.clearFilters")}
           </Button>
         ) : null}
       </div>
@@ -194,7 +189,7 @@ export function PokedexFilters({ state, setState, reset, resultCount }: Props) {
           htmlFor="hide-non-playable"
           className="cursor-pointer text-sm text-foreground/80"
         >
-          只看可入住（排除百变怪 / 神兽）
+          {t("pokedex.hidenonPlayable")}
         </Label>
       </div>
 
@@ -205,7 +200,7 @@ export function PokedexFilters({ state, setState, reset, resultCount }: Props) {
         {/* Environment */}
         <AccordionItem value="env" className="border-none">
           <AccordionTrigger className="rounded-xl px-2 py-1.5 text-sm hover:no-underline data-[state=open]:bg-muted/40">
-            喜欢环境
+            {t("pokedex.filterGroups.env")}
             {state.envs.size > 0 ? (
               <span className="ml-2 text-xs text-muted-foreground">
                 · {state.envs.size}
@@ -230,7 +225,7 @@ export function PokedexFilters({ state, setState, reset, resultCount }: Props) {
                     )}
                   >
                     <span aria-hidden>{ENVIRONMENT_EMOJI[env]}</span>
-                    {env}
+                    {translateEnv(env)}
                   </button>
                 );
               })}
@@ -241,7 +236,7 @@ export function PokedexFilters({ state, setState, reset, resultCount }: Props) {
         {/* Specialty — grouped */}
         <AccordionItem value="specialty" className="border-none">
           <AccordionTrigger className="rounded-xl px-2 py-1.5 text-sm hover:no-underline data-[state=open]:bg-muted/40">
-            特长
+            {t("pokedex.filterGroups.specialty")}
             {state.specialties.size > 0 ? (
               <span className="ml-2 text-xs text-muted-foreground">
                 · {state.specialties.size}
@@ -250,9 +245,9 @@ export function PokedexFilters({ state, setState, reset, resultCount }: Props) {
           </AccordionTrigger>
           <AccordionContent className="flex flex-col gap-3 pt-2 pb-1">
             {SPECIALTY_GROUPS.map((group) => (
-              <div key={group.label} className="flex flex-col gap-1.5">
+              <div key={group.key} className="flex flex-col gap-1.5">
                 <span className="text-[11px] uppercase tracking-widest text-muted-foreground">
-                  {group.label}
+                  {t(`pokedex.specialtyGroups.${group.key}`)}
                 </span>
                 <div className="flex flex-wrap gap-1">
                   {group.items.map((s) => {
@@ -269,7 +264,7 @@ export function PokedexFilters({ state, setState, reset, resultCount }: Props) {
                             : "border-border/60 bg-background text-foreground/70 hover:bg-muted/60",
                         )}
                       >
-                        {s}
+                        {translateSpecialty(s)}
                       </button>
                     );
                   })}
@@ -282,7 +277,7 @@ export function PokedexFilters({ state, setState, reset, resultCount }: Props) {
         {/* Taste */}
         <AccordionItem value="taste" className="border-none">
           <AccordionTrigger className="rounded-xl px-2 py-1.5 text-sm hover:no-underline data-[state=open]:bg-muted/40">
-            口味
+            {t("pokedex.filterGroups.taste")}
             {state.tastes.size > 0 ? (
               <span className="ml-2 text-xs text-muted-foreground">
                 · {state.tastes.size}
@@ -291,13 +286,13 @@ export function PokedexFilters({ state, setState, reset, resultCount }: Props) {
           </AccordionTrigger>
           <AccordionContent className="pt-2 pb-1">
             <div className="flex flex-wrap gap-1.5">
-              {TASTES.map((t) => {
-                const active = state.tastes.has(t);
+              {TASTES.map((ts) => {
+                const active = state.tastes.has(ts);
                 return (
                   <button
-                    key={t}
+                    key={ts}
                     type="button"
-                    onClick={() => toggle<Taste>("tastes", t)}
+                    onClick={() => toggle<Taste>("tastes", ts)}
                     className={cn(
                       "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs transition-colors",
                       active
@@ -305,8 +300,8 @@ export function PokedexFilters({ state, setState, reset, resultCount }: Props) {
                         : "border-border/60 bg-background text-foreground/70 hover:bg-muted/60",
                     )}
                   >
-                    <span aria-hidden>{TASTE_EMOJI[t]}</span>
-                    {t}
+                    <span aria-hidden>{TASTE_EMOJI[ts]}</span>
+                    {translateTaste(ts)}
                   </button>
                 );
               })}
@@ -317,7 +312,7 @@ export function PokedexFilters({ state, setState, reset, resultCount }: Props) {
         {/* Littered items */}
         <AccordionItem value="littered" className="border-none">
           <AccordionTrigger className="rounded-xl px-2 py-1.5 text-sm hover:no-underline data-[state=open]:bg-muted/40">
-            乱撒物
+            {t("pokedex.filterGroups.littered")}
             {state.litteredItems.size > 0 ? (
               <span className="ml-2 text-xs text-muted-foreground">
                 · {state.litteredItems.size}
@@ -340,7 +335,7 @@ export function PokedexFilters({ state, setState, reset, resultCount }: Props) {
                         : "border-border/60 bg-background text-foreground/70 hover:bg-muted/60",
                     )}
                   >
-                    {it}
+                    {translateLitteredItem(it)}
                   </button>
                 );
               })}
@@ -351,7 +346,7 @@ export function PokedexFilters({ state, setState, reset, resultCount }: Props) {
         {/* Likes */}
         <AccordionItem value="likes" className="border-none">
           <AccordionTrigger className="rounded-xl px-2 py-1.5 text-sm hover:no-underline data-[state=open]:bg-muted/40">
-            喜欢事物
+            {t("pokedex.filterGroups.likes")}
             {state.likes.size > 0 ? (
               <span className="ml-2 text-xs text-muted-foreground">
                 · {state.likes.size}
@@ -385,35 +380,51 @@ export function PokedexFilters({ state, setState, reset, resultCount }: Props) {
 
       {active > 0 ? (
         <div className="flex flex-wrap gap-1 pt-2">
-          <span className="text-[11px] text-muted-foreground">已选：</span>
+          <span className="text-[11px] text-muted-foreground">
+            {t("pokedex.selectedPrefix")}
+          </span>
           {[...state.envs].map((e) => (
             <Chip
               key={`e:${e}`}
+              label={t("pokedex.removeFilter")}
               onRemove={() => toggle<Environment>("envs", e)}
             >
-              {ENVIRONMENT_EMOJI[e]} {e}
+              {ENVIRONMENT_EMOJI[e]} {translateEnv(e)}
             </Chip>
           ))}
           {[...state.specialties].map((s) => (
-            <Chip key={`s:${s}`} onRemove={() => toggle<string>("specialties", s)}>
-              {s}
+            <Chip
+              key={`s:${s}`}
+              label={t("pokedex.removeFilter")}
+              onRemove={() => toggle<string>("specialties", s)}
+            >
+              {translateSpecialty(s)}
             </Chip>
           ))}
-          {[...state.tastes].map((t) => (
-            <Chip key={`t:${t}`} onRemove={() => toggle<Taste>("tastes", t)}>
-              {TASTE_EMOJI[t]} {t}
+          {[...state.tastes].map((ts) => (
+            <Chip
+              key={`t:${ts}`}
+              label={t("pokedex.removeFilter")}
+              onRemove={() => toggle<Taste>("tastes", ts)}
+            >
+              {TASTE_EMOJI[ts]} {translateTaste(ts)}
             </Chip>
           ))}
           {[...state.litteredItems].map((it) => (
             <Chip
               key={`i:${it}`}
+              label={t("pokedex.removeFilter")}
               onRemove={() => toggle<string>("litteredItems", it)}
             >
-              {it}
+              {translateLitteredItem(it)}
             </Chip>
           ))}
           {[...state.likes].map((l) => (
-            <Chip key={`l:${l}`} onRemove={() => toggle<string>("likes", l)}>
+            <Chip
+              key={`l:${l}`}
+              label={t("pokedex.removeFilter")}
+              onRemove={() => toggle<string>("likes", l)}
+            >
               {l}
             </Chip>
           ))}
@@ -425,9 +436,11 @@ export function PokedexFilters({ state, setState, reset, resultCount }: Props) {
 
 function Chip({
   children,
+  label,
   onRemove,
 }: {
   children: React.ReactNode;
+  label: string;
   onRemove: () => void;
 }) {
   return (
@@ -440,7 +453,7 @@ function Chip({
         type="button"
         onClick={onRemove}
         className="ml-0.5 -mr-0.5 inline-flex size-3.5 items-center justify-center rounded-full text-muted-foreground hover:bg-muted"
-        aria-label="移除此筛选"
+        aria-label={label}
       >
         <X className="size-2.5" strokeWidth={2.5} />
       </button>

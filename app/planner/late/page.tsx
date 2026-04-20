@@ -18,12 +18,14 @@ import {
   similarity,
   similarityMatrix,
 } from "@/lib/similarity";
+import { useT } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import {
   ENVIRONMENT_CLASSES,
   ENVIRONMENT_EMOJI,
   type Environment,
   type Pokemon,
+  type Taste,
 } from "@/types/pokemon";
 
 const MIN_SELECTION = 2;
@@ -34,6 +36,7 @@ export default function PlannerLatePage() {
   const hasHydrated = useLatePlannerStore((s) => s.hasHydrated);
   const remove = useLatePlannerStore((s) => s.remove);
   const [detail, setDetail] = useState<Pokemon | null>(null);
+  const { t } = useT();
 
   const matrix = useMemo(() => similarityMatrix(selected), [selected]);
   const groups = useMemo(
@@ -60,14 +63,13 @@ export default function PlannerLatePage() {
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div className="flex flex-col gap-1">
           <span className="text-xs uppercase tracking-widest text-muted-foreground">
-            Late-game Planner
+            {t("plannerLate.eyebrow")}
           </span>
           <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-            后期规划器
+            {t("plannerLate.title")}
           </h1>
           <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
-            相似度导向。挑 {MIN_SELECTION}–{MAX_RECOMMENDED} 只想精致安排的宝可梦，
-            看它们两两有多投缘、自动分组、并给出"共同布置清单"。
+            {t("plannerLate.lead", { min: MIN_SELECTION, max: MAX_RECOMMENDED })}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -75,9 +77,10 @@ export default function PlannerLatePage() {
             variant="outline"
             className="rounded-full border-border/60 bg-background px-2.5 py-0.5 text-xs"
           >
-            已选 {selected.length}
+            {t("plannerLate.selectedBadge", { n: selected.length })}
           </Badge>
           <PlannerSelector
+            triggerLabel={t("plannerLate.adjustSelection")}
             triggerVariant="default"
             store={useLatePlannerStore}
             compact
@@ -101,7 +104,7 @@ export default function PlannerLatePage() {
                   type="button"
                   onClick={() => remove(p.id)}
                   className="pkp-lift flex items-center gap-2 rounded-full border border-border/60 bg-background px-2 py-1 text-xs"
-                  title={`#${p.id} ${p.name} · 点击移除`}
+                  title={t("plannerLate.removeHint", { id: p.id, name: p.name })}
                 >
                   <PokemonIcon pokemon={p} size={24} />
                   <span className="font-medium">{p.name}</span>
@@ -121,9 +124,11 @@ export default function PlannerLatePage() {
           {/* Groups */}
           <section className="flex flex-col gap-3">
             <header className="flex items-end justify-between">
-              <h2 className="text-lg font-semibold">自动分组建议</h2>
+              <h2 className="text-lg font-semibold">
+                {t("plannerLate.groupsTitle")}
+              </h2>
               <span className="text-xs text-muted-foreground">
-                按环境 + 相似度贪心聚合，每组 ≤ 6 只
+                {t("plannerLate.groupsHint")}
               </span>
             </header>
             <div className="grid items-start gap-4 lg:grid-cols-2">
@@ -154,6 +159,7 @@ export default function PlannerLatePage() {
 // ---------------------------------------------------------------------------
 
 function EmptyCta() {
+  const { t } = useT();
   return (
     <Card className="rounded-3xl border-dashed border-border/60 bg-card/60 shadow-none">
       <CardContent className="flex flex-col items-center gap-4 p-10 text-center">
@@ -162,15 +168,14 @@ function EmptyCta() {
         </span>
         <div className="flex flex-col gap-1.5">
           <h2 className="text-lg font-semibold">
-            挑 2–10 只来看它们合不合得来
+            {t("plannerLate.emptyTitle")}
           </h2>
           <p className="max-w-md text-sm text-muted-foreground">
-            后期规划更关注气味相投：相同环境 +40，相同口味 +20，喜欢事物的 Jaccard × 40。
-            不同环境直接 0 分——它们不会开心地住在一起。
+            {t("plannerLate.emptyBody")}
           </p>
         </div>
         <PlannerSelector
-          triggerLabel="从 287 只挑起"
+          triggerLabel={t("plannerLate.selectorLabel")}
           triggerVariant="default"
           store={useLatePlannerStore}
           compact
@@ -192,34 +197,39 @@ function MetricsCard({
   avgScore: number;
   count: number;
 }) {
+  const { t } = useT();
   return (
     <div className="grid gap-3 sm:grid-cols-3">
       <Metric
         icon={Users}
         accent="bg-pkp-peach text-pkp-peach-ink"
-        label="选择数"
+        label={t("plannerLate.metrics.count")}
         value={`${count}`}
-        hint={count > MAX_RECOMMENDED ? `建议 ≤ ${MAX_RECOMMENDED}` : "建议区间 2–10"}
+        hint={
+          count > MAX_RECOMMENDED
+            ? t("plannerLate.metrics.countOver", { max: MAX_RECOMMENDED })
+            : t("plannerLate.metrics.countHint")
+        }
       />
       <Metric
         icon={Heart}
         accent="bg-pkp-pink text-pkp-pink-ink"
-        label="平均相似度"
+        label={t("plannerLate.metrics.avgScore")}
         value={`${avgScore}`}
         hint={
           avgScore >= 70
-            ? "气味很相投"
+            ? t("plannerLate.metrics.avgVeryHigh")
             : avgScore >= 40
-              ? "勉强可以混住"
-              : "硬要住一起会不舒服"
+              ? t("plannerLate.metrics.avgMid")
+              : t("plannerLate.metrics.avgLow")
         }
       />
       <Metric
         icon={Sparkles}
         accent="bg-pkp-mint text-pkp-mint-ink"
-        label="相似度口径"
-        value="env+40·taste+20·likes×40"
-        hint="不同环境 → 0（用户钉死）"
+        label={t("plannerLate.metrics.formulaLabel")}
+        value={t("plannerLate.metrics.formulaValue")}
+        hint={t("plannerLate.metrics.formulaHint")}
       />
     </div>
   );
@@ -276,6 +286,7 @@ function SimilarityMatrix({
   matrix: Array<Array<number | null>>;
   onPick: (p: Pokemon) => void;
 }) {
+  const { t } = useT();
   if (list.length < 2) return null;
 
   return (
@@ -284,14 +295,22 @@ function SimilarityMatrix({
         <header className="flex flex-wrap items-end justify-between gap-2">
           <div className="flex flex-col gap-0.5">
             <span className="text-xs uppercase tracking-widest text-muted-foreground">
-              Similarity matrix
+              {t("plannerLate.matrixEyebrow")}
             </span>
-            <h2 className="text-lg font-semibold">两两相似度</h2>
+            <h2 className="text-lg font-semibold">
+              {t("plannerLate.matrixTitle")}
+            </h2>
           </div>
           <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
-            <ScoreSwatch level="high">≥ 70</ScoreSwatch>
-            <ScoreSwatch level="mid">40 – 69</ScoreSwatch>
-            <ScoreSwatch level="low">&lt; 40</ScoreSwatch>
+            <ScoreSwatch level="high">
+              {t("plannerLate.matrixLegend.high")}
+            </ScoreSwatch>
+            <ScoreSwatch level="mid">
+              {t("plannerLate.matrixLegend.mid")}
+            </ScoreSwatch>
+            <ScoreSwatch level="low">
+              {t("plannerLate.matrixLegend.low")}
+            </ScoreSwatch>
           </div>
         </header>
 
@@ -361,6 +380,7 @@ function ScoreCell({
   value: number | null;
   self: boolean;
 }) {
+  const { t } = useT();
   if (self)
     return (
       <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted/40 text-[10px] text-muted-foreground">
@@ -385,7 +405,7 @@ function ScoreCell({
         "flex h-10 w-10 items-center justify-center rounded-lg font-mono text-[11px] font-medium",
         cls,
       )}
-      title={`${value} 分`}
+      title={`${value}${t("detail.scoreSuffix")}`}
     >
       {value}
     </div>
@@ -425,6 +445,7 @@ function GroupCard({
   index: number;
   onPick: (p: Pokemon) => void;
 }) {
+  const { t, translateEnv, translateTaste } = useT();
   const overlap = useMemo(() => commonOverlap(group), [group]);
   const avgInner = useMemo(() => {
     if (group.length < 2) return null;
@@ -440,6 +461,7 @@ function GroupCard({
   }, [group]);
 
   const envList = overlap.envs as Environment[];
+  const letter = String.fromCharCode(65 + index);
 
   return (
     <Card className="rounded-3xl border-border/60 bg-card shadow-sm">
@@ -447,15 +469,19 @@ function GroupCard({
         <header className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-3">
             <span className="inline-flex size-9 items-center justify-center rounded-2xl bg-muted text-xs font-semibold">
-              {String.fromCharCode(65 + index)}
+              {letter}
             </span>
             <div className="flex flex-col">
               <span className="font-semibold">
-                分组 {String.fromCharCode(65 + index)}
+                {t("plannerLate.group.title", { letter })}
               </span>
               <span className="text-[11px] text-muted-foreground">
-                {group.length} 只 ·{" "}
-                {avgInner != null ? `内部平均 ${avgInner} 分` : "单只"}
+                {avgInner != null
+                  ? t("plannerLate.group.inner", {
+                      n: group.length,
+                      avg: avgInner,
+                    })
+                  : t("plannerLate.group.innerSingle")}
               </span>
             </div>
           </div>
@@ -474,7 +500,7 @@ function GroupCard({
                   )}
                 >
                   <span aria-hidden>{ENVIRONMENT_EMOJI[e]}</span>
-                  {e}
+                  {translateEnv(e)}
                 </Badge>
               );
             })}
@@ -503,16 +529,16 @@ function GroupCard({
         {overlap.tastes.length > 0 ? (
           <div className="flex items-start gap-2">
             <span className="shrink-0 text-[11px] uppercase tracking-widest text-muted-foreground">
-              共同口味
+              {t("plannerLate.group.commonTastes")}
             </span>
             <div className="flex flex-wrap gap-1">
-              {overlap.tastes.map((t) => (
+              {overlap.tastes.map((ts) => (
                 <Badge
-                  key={t}
+                  key={ts}
                   variant="outline"
                   className="rounded-full border-border/60 bg-muted/60 px-2 py-0.5 text-[11px] text-muted-foreground"
                 >
-                  {t}
+                  {translateTaste(ts as Taste)}
                 </Badge>
               ))}
             </div>
@@ -522,7 +548,7 @@ function GroupCard({
         {overlap.likes.length > 0 ? (
           <div className="flex flex-col gap-1.5">
             <span className="text-[11px] uppercase tracking-widest text-muted-foreground">
-              共同布置清单（按覆盖数排序）
+              {t("plannerLate.group.commonLikes")}
             </span>
             <div className="flex flex-wrap gap-1">
               {overlap.likes.slice(0, 12).map((l) => (

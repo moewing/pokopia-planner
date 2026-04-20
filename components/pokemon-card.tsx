@@ -5,6 +5,7 @@ import { Lock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { PokemonIcon } from "@/components/pokemon-icon";
+import { useT } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import {
   ENVIRONMENT_CLASSES,
@@ -33,6 +34,7 @@ export function PokemonCard({
   onClick?: () => void;
   selected?: boolean;
 }) {
+  const { t, translateEnv, translateTaste, translateSpecialty } = useT();
   const envCls = pokemon.env
     ? ENVIRONMENT_CLASSES[pokemon.env as Environment]
     : null;
@@ -62,7 +64,7 @@ export function PokemonCard({
         {!pokemon.is_playable && (
           <span className="absolute top-3 right-3 inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
             <Lock className="size-3" strokeWidth={2} />
-            不可入住
+            {t("common.notPlayable")}
           </span>
         )}
 
@@ -96,17 +98,17 @@ export function PokemonCard({
               <span aria-hidden>
                 {ENVIRONMENT_EMOJI[pokemon.env as Environment]}
               </span>
-              {pokemon.env}
+              {translateEnv(pokemon.env as Environment)}
             </Badge>
           ) : null}
-          {tastes.map((t) => (
+          {tastes.map((ts) => (
             <Badge
-              key={t}
+              key={ts}
               variant="outline"
               className="gap-1 rounded-full border-border/60 bg-muted/60 px-2 py-0.5 text-[11px] text-muted-foreground"
             >
-              <span aria-hidden>{TASTE_EMOJI[t]}</span>
-              {t}
+              <span aria-hidden>{TASTE_EMOJI[ts]}</span>
+              {translateTaste(ts)}
             </Badge>
           ))}
         </div>
@@ -118,7 +120,7 @@ export function PokemonCard({
               variant="outline"
               className="rounded-full border-border/60 bg-background px-2 py-0.5 text-[10px] font-normal text-foreground/80"
             >
-              {s}
+              {translateSpecialty(s)}
             </Badge>
           ))}
           {pokemon.specialties.length > 3 ? (

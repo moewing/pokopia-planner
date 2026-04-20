@@ -13,6 +13,7 @@ import {
   type UnhousedRecord,
   type Zone,
 } from "@/lib/terrace";
+import { useT } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import {
   ENVIRONMENT_CLASSES,
@@ -35,6 +36,7 @@ interface Props {
 export function TerracePlanner({ onPick }: Props) {
   const selected = useSelectedPokemon();
   const [mapName, setMapName] = useState<MapName>(MAP_NAMES[4]); // 空空镇 default
+  const { t } = useT();
 
   const layout = useMemo(() => planTerrace(selected), [selected]);
 
@@ -42,7 +44,7 @@ export function TerracePlanner({ onPick }: Props) {
     return (
       <Card className="rounded-3xl border-dashed border-border/60 bg-card/60 shadow-none">
         <CardContent className="p-10 text-center text-sm text-muted-foreground">
-          先选几只宝可梦再来精算。
+          {t("manual.empty")}
         </CardContent>
       </Card>
     );
@@ -56,7 +58,7 @@ export function TerracePlanner({ onPick }: Props) {
           <div className="flex flex-wrap items-center gap-2">
             <MapPin className="size-4 text-muted-foreground" strokeWidth={1.75} />
             <span className="text-xs uppercase tracking-widest text-muted-foreground">
-              地图
+              {t("terrace.mapLabel")}
             </span>
             <div className="flex flex-wrap gap-1.5">
               {MAP_NAMES.map((name) => (
@@ -79,24 +81,24 @@ export function TerracePlanner({ onPick }: Props) {
 
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             <StatCell
-              label="入住宝可梦"
+              label={t("terrace.stats.pokemon")}
               value={`${layout.stats.pokemon}`}
-              hint={`分布在 ${layout.cells.length} 格`}
+              hint={t("terrace.stats.pokemonHint", { n: layout.cells.length })}
             />
             <StatCell
-              label="使用环境"
+              label={t("terrace.stats.envs")}
               value={`${layout.stats.envsRepresented}`}
-              hint="最多 3 条轴 × 2 值"
+              hint={t("terrace.stats.envsHint")}
             />
             <StatCell
-              label="物品覆盖"
+              label={t("terrace.stats.likes")}
               value={`${layout.stats.likesCovered}`}
-              hint="宝可梦×喜欢的命中数"
+              hint={t("terrace.stats.likesHint")}
             />
             <StatCell
-              label="满足率"
+              label={t("terrace.stats.satisfaction")}
               value={`${Math.round(layout.stats.avgLikeSatisfaction * 100)}%`}
-              hint="被满足的 likes 占比"
+              hint={t("terrace.stats.satisfactionHint")}
             />
           </div>
 
@@ -209,27 +211,32 @@ function CellCard({
   privateZone: Zone | undefined;
   onPick: (p: Pokemon) => void;
 }) {
+  const { t, translateEnv } = useT();
+  const letter = String.fromCharCode(65 + cell.index);
   return (
     <Card className="flex-1 rounded-3xl border-border/60 bg-card shadow-sm lg:min-w-0">
       <CardContent className="flex flex-col gap-3 p-4">
         <header className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <span className="inline-flex size-7 items-center justify-center rounded-2xl bg-muted text-xs font-semibold">
-              {String.fromCharCode(65 + cell.index)}
+              {letter}
             </span>
             <span className="text-sm font-semibold">
-              居住地 {String.fromCharCode(65 + cell.index)}
+              {t("terrace.cell.title", { letter })}
             </span>
           </div>
           <span className="font-mono text-[10px] text-muted-foreground">
-            4×4 · {cell.pokemon.length}/6
+            {t("terrace.cell.sizeLabel", {
+              cur: cell.pokemon.length,
+              max: 6,
+            })}
           </span>
         </header>
 
         {/* Env stack */}
         <div className="flex flex-wrap items-center gap-1">
           <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-            环境
+            {t("terrace.cell.envLabel")}
           </span>
           {cell.envs.map((e) => {
             const cls = ENVIRONMENT_CLASSES[e as Environment];
@@ -247,7 +254,7 @@ function CellCard({
                 <span aria-hidden>
                   {ENVIRONMENT_EMOJI[e as Environment]}
                 </span>
-                {e}
+                {translateEnv(e as Environment)}
               </Badge>
             );
           })}
@@ -273,8 +280,8 @@ function CellCard({
         {privateZone ? (
           <ZoneBlock
             zone={privateZone}
-            title="私有区"
-            subtitle="只有本格子的宝可梦享用"
+            title={t("terrace.cell.privateZone")}
+            subtitle={t("terrace.cell.privateSubtitle")}
             tone="peach"
           />
         ) : null}
@@ -288,18 +295,19 @@ function CellCard({
 // --------------------------------------------------------------------------
 
 function OverlapCard({ zone }: { zone: Zone }) {
+  const { t } = useT();
   return (
     <div className="flex shrink-0 items-center justify-center lg:w-48">
       <Card className="w-full rounded-3xl border-pkp-mint-ink/20 bg-pkp-mint/40 shadow-sm">
         <CardContent className="flex flex-col gap-2 p-3">
           <header className="flex items-center justify-between gap-2">
             <span className="font-mono text-[10px] uppercase tracking-widest text-pkp-mint-ink">
-              重叠区
+              {t("terrace.overlap.eyebrow")}
             </span>
             <ArrowRight className="size-3 text-pkp-mint-ink/70" strokeWidth={1.75} />
           </header>
           <span className="text-[11px] text-pkp-mint-ink/80">
-            {zone.beneficiaries.length} 只共享 · 最高效
+            {t("terrace.overlap.caption", { n: zone.beneficiaries.length })}
           </span>
           <ZoneBlock
             zone={zone}
@@ -331,6 +339,7 @@ function ZoneBlock({
   tone: "peach" | "mint";
   dense?: boolean;
 }) {
+  const { t } = useT();
   const cls = tone === "peach"
     ? "border-pkp-peach-ink/20 bg-pkp-peach text-pkp-peach-ink"
     : "border-pkp-mint-ink/20 bg-pkp-mint text-pkp-mint-ink";
@@ -341,7 +350,7 @@ function ZoneBlock({
         "rounded-2xl border border-dashed border-border/60 px-2 py-1.5 text-[10px] text-muted-foreground",
         dense ? "" : "bg-muted/30"
       )}>
-        {dense ? "无需额外物品" : "（无建议物品）"}
+        {dense ? t("terrace.overlap.noItems") : t("terrace.overlap.noItemsFull")}
       </div>
     );
   }
@@ -389,6 +398,7 @@ function UnhousedSection({
   unhoused: UnhousedRecord[];
   onPick: (p: Pokemon) => void;
 }) {
+  const { t } = useT();
   const conflicts = unhoused.filter((u) => u.reason === "env_conflict");
   const fulls = unhoused.filter((u) => u.reason === "cell_full");
 
@@ -399,13 +409,13 @@ function UnhousedSection({
           <CardContent className="flex flex-col gap-3 p-5">
             <div className="flex flex-col gap-0.5">
               <span className="text-[11px] uppercase tracking-widest text-destructive/80">
-                environment clash · {conflicts.length} 只
+                {t("terrace.unhoused.conflictEyebrow", { n: conflicts.length })}
               </span>
               <h3 className="text-sm font-semibold text-destructive">
-                同轴环境冲突 —— 和现有居住地的环境互斥
+                {t("terrace.unhoused.conflictTitle")}
               </h3>
               <p className="text-[11px] text-destructive/70">
-                它们需要的环境和地图里已经排上的某个轴的值正好相反（如明亮↔昏暗），物理上无法同图。建议另建一个 terrace。
+                {t("terrace.unhoused.conflictBody")}
               </p>
             </div>
             <div className="flex flex-col gap-2">
@@ -422,14 +432,13 @@ function UnhousedSection({
           <CardContent className="flex flex-col gap-3 p-5">
             <div className="flex flex-col gap-0.5">
               <span className="text-[11px] uppercase tracking-widest text-amber-700/80">
-                cells full · {fulls.length} 只
+                {t("terrace.unhoused.fullEyebrow", { n: fulls.length })}
               </span>
               <h3 className="text-sm font-semibold text-amber-900/90">
-                格子已满（按效率排队未上）
+                {t("terrace.unhoused.fullTitle")}
               </h3>
               <p className="text-[11px] text-amber-900/70">
-                目前上榜的是"喜欢的事物与他人重叠最多"的宝可梦。这些没挤上的 pokemon 兴趣相对独特，
-                可以看看它们喜欢什么，决定是另建 terrace 还是直接换人。
+                {t("terrace.unhoused.fullBody")}
               </p>
             </div>
             <div className="flex flex-col gap-2">
@@ -451,6 +460,7 @@ function ConflictRow({
   record: UnhousedRecord;
   onPick: (p: Pokemon) => void;
 }) {
+  const { t, translateEnv } = useT();
   const p = record.pokemon;
   const pEnv = p.env as Environment;
   const pCls = ENVIRONMENT_CLASSES[pEnv];
@@ -470,7 +480,9 @@ function ConflictRow({
         <span>{p.name}</span>
       </button>
       <div className="flex items-center gap-1 text-[11px]">
-        <span className="text-muted-foreground">需要</span>
+        <span className="text-muted-foreground">
+          {t("terrace.unhoused.conflictRequire")}
+        </span>
         <Badge
           variant="outline"
           className={cn(
@@ -481,9 +493,11 @@ function ConflictRow({
           )}
         >
           <span aria-hidden>{ENVIRONMENT_EMOJI[pEnv]}</span>
-          {pEnv}
+          {translateEnv(pEnv)}
         </Badge>
-        <span className="text-muted-foreground">但冲突于</span>
+        <span className="text-muted-foreground">
+          {t("terrace.unhoused.conflictWith")}
+        </span>
         {conflicting.map((e) => {
           const cls = ENVIRONMENT_CLASSES[e];
           return (
@@ -498,7 +512,7 @@ function ConflictRow({
               )}
             >
               <span aria-hidden>{ENVIRONMENT_EMOJI[e]}</span>
-              {e}
+              {translateEnv(e)}
             </Badge>
           );
         })}
@@ -514,6 +528,7 @@ function FullRow({
   record: UnhousedRecord;
   onPick: (p: Pokemon) => void;
 }) {
+  const { t, translateEnv } = useT();
   const p = record.pokemon;
   const pEnv = p.env as Environment;
   const pCls = ENVIRONMENT_CLASSES[pEnv];
@@ -542,16 +557,18 @@ function FullRow({
           )}
         >
           <span aria-hidden>{ENVIRONMENT_EMOJI[pEnv]}</span>
-          {pEnv}
+          {translateEnv(pEnv)}
         </Badge>
         <span className="font-mono text-[10px] text-muted-foreground">
-          效率分 {record.efficiencyScore}
+          {t("terrace.unhoused.efficiencyScore", {
+            n: record.efficiencyScore,
+          })}
         </span>
       </div>
       {record.likes.length > 0 ? (
         <div className="flex items-start gap-2">
           <span className="shrink-0 text-[10px] uppercase tracking-widest text-muted-foreground">
-            如果另建 terrace,它喜欢
+            {t("terrace.unhoused.likesLead")}
           </span>
           <div className="flex flex-wrap gap-1">
             {record.likes.map((l) => (

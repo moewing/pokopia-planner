@@ -37,6 +37,7 @@ import {
   type PokemonOverride,
 } from "@/lib/data";
 import { buildFeedbackIssueUrl } from "@/lib/feedback";
+import { useT } from "@/lib/i18n";
 import { useAllPokemon, useOverridesStore } from "@/store/overrides-store";
 import { cn } from "@/lib/utils";
 import {
@@ -59,6 +60,7 @@ export default function EditPage() {
   const clearAll = useOverridesStore((s) => s.clearAll);
   const exportAsJson = useOverridesStore((s) => s.exportAsJson);
 
+  const { t } = useT();
   const [query, setQuery] = useState("");
   const [editing, setEditing] = useState<Pokemon | null>(null);
 
@@ -82,7 +84,7 @@ export default function EditPage() {
   const updateOverride = (id: number, patch: PokemonOverride) => setOne(id, patch);
   const resetOne = (id: number) => removeOne(id);
   const resetAll = () => {
-    if (!confirm("确定清空所有本地修改？原始 pokemon.json 不受影响。")) return;
+    if (!confirm(t("feedback.resetConfirm"))) return;
     clearAll();
   };
 
@@ -104,9 +106,7 @@ export default function EditPage() {
     );
     if (bodyTooLong && typeof navigator !== "undefined" && navigator.clipboard) {
       navigator.clipboard.writeText(body).catch(() => {});
-      alert(
-        "改动太多、URL 装不下——已把修改报告复制到剪贴板。\n\n下面会打开一个 GitHub issue 页面，直接粘贴到正文即可。",
-      );
+      alert(t("feedback.clipboardFallback"));
     }
     window.open(url, "_blank", "noopener,noreferrer");
   };
@@ -118,14 +118,13 @@ export default function EditPage() {
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div className="flex flex-col gap-1">
           <span className="text-xs uppercase tracking-widest text-muted-foreground">
-            Feedback
+            {t("feedback.eyebrow")}
           </span>
           <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-            发现错误？
+            {t("feedback.title")}
           </h1>
           <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
-            玩得多了、发现某只宝可梦的数据和实际不符？在这里把你觉得对的值填进去，
-            修改只存你自己的浏览器（不会影响其他访客），但可以一键把差异发成 GitHub issue 提交给作者修正。
+            {t("feedback.lead")}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -138,7 +137,7 @@ export default function EditPage() {
                 : "border-border/60 bg-background text-muted-foreground",
             )}
           >
-            待反馈 {modifiedCount} 条
+            {t("feedback.pendingBadge", { n: modifiedCount })}
           </Badge>
           <Button
             variant="outline"
@@ -148,7 +147,7 @@ export default function EditPage() {
             className="gap-1.5 rounded-full"
           >
             <RotateCcw className="size-4" strokeWidth={1.75} />
-            全部重置
+            {t("common.resetAll")}
           </Button>
           <Button
             variant="outline"
@@ -158,7 +157,7 @@ export default function EditPage() {
             className="gap-1.5 rounded-full"
           >
             <Download className="size-4" strokeWidth={1.75} />
-            导出 JSON
+            {t("feedback.exportButton")}
           </Button>
           <Button
             size="sm"
@@ -167,7 +166,7 @@ export default function EditPage() {
             className="gap-1.5 rounded-full"
           >
             <Send className="size-4" strokeWidth={1.75} />
-            提交给作者
+            {t("feedback.submitButton")}
           </Button>
         </div>
       </header>
@@ -175,11 +174,15 @@ export default function EditPage() {
       <Card className="rounded-3xl border-pkp-lavender-ink/20 bg-pkp-lavender/40 shadow-none">
         <CardContent className="flex items-start gap-2 p-4 text-sm text-pkp-lavender-ink">
           <Info className="mt-0.5 size-4 shrink-0" strokeWidth={1.75} />
-          <div className="flex-1 leading-6">
-            你在这页的修改 <strong>只存在你自己的浏览器</strong>，刷新后还在，但不会同步给其他人。
-            确认某条数据确实有问题、希望修正到主仓库的话，点右上<strong>"提交给作者"</strong>——
-            会把你改过的内容组织成一份简洁的 GitHub issue 让你在浏览器里确认并发送。
-          </div>
+          <div
+            className="flex-1 leading-6"
+            dangerouslySetInnerHTML={{
+              __html: t("feedback.infoCard").replace(
+                /\*\*(.+?)\*\*/g,
+                "<strong>$1</strong>",
+              ),
+            }}
+          />
         </CardContent>
       </Card>
 
@@ -191,16 +194,17 @@ export default function EditPage() {
               strokeWidth={1.75}
             />
             <Input
-              placeholder="搜索名字 / 编号 / 特长 / 喜欢事物"
+              placeholder={t("feedback.searchPlaceholder")}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               className="rounded-full pl-9"
             />
           </div>
           <span className="text-xs text-muted-foreground">
-            <span className="font-mono text-foreground">{filtered.length}</span>
-            {" / "}
-            <span className="font-mono">{merged.length}</span> 条 · 点击行右侧"编辑"打开编辑器
+            {t("feedback.rowCaption", {
+              filtered: filtered.length,
+              total: merged.length,
+            })}
           </span>
         </CardContent>
       </Card>
@@ -221,7 +225,7 @@ export default function EditPage() {
             </ul>
             {filtered.length === 0 ? (
               <div className="p-10 text-center text-sm text-muted-foreground">
-                没有匹配的宝可梦
+                {t("feedback.empty")}
               </div>
             ) : null}
           </CardContent>
@@ -257,6 +261,7 @@ function Row({
   onEdit: () => void;
   onReset: () => void;
 }) {
+  const { t, translateEnv, translateTaste, translateSpecialty } = useT();
   const envCls = pokemon.env
     ? ENVIRONMENT_CLASSES[pokemon.env as Environment]
     : null;
@@ -272,12 +277,12 @@ function Row({
           <span className="text-sm font-medium">{pokemon.name}</span>
           {!pokemon.is_playable ? (
             <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
-              不可入住
+              {t("common.notPlayable")}
             </span>
           ) : null}
           {modified ? (
             <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
-              已修改
+              {t("common.modified")}
             </span>
           ) : null}
         </div>
@@ -293,22 +298,25 @@ function Row({
               <span aria-hidden>
                 {ENVIRONMENT_EMOJI[pokemon.env as Environment]}
               </span>
-              {pokemon.env}
+              {translateEnv(pokemon.env as Environment)}
             </span>
           ) : (
-            <span className="text-[10px] text-muted-foreground">无环境</span>
+            <span className="text-[10px] text-muted-foreground">
+              {t("common.none")}
+            </span>
           )}
-          {tastes.map((t) => (
+          {tastes.map((ts) => (
             <span
-              key={t}
+              key={ts}
               className="inline-flex items-center gap-0.5 rounded-full bg-muted/60 px-1.5 py-0.5 text-[10px] text-muted-foreground"
             >
-              <span aria-hidden>{TASTE_EMOJI[t]}</span>
-              {t}
+              <span aria-hidden>{TASTE_EMOJI[ts]}</span>
+              {translateTaste(ts)}
             </span>
           ))}
           <span className="text-[11px] text-muted-foreground">
-            · {pokemon.specialties.join(" / ")}
+            {" · "}
+            {pokemon.specialties.map((s) => translateSpecialty(s)).join(" / ")}
           </span>
           <span className="text-[11px] text-muted-foreground">
             · likes {pokemon.likes.length}
@@ -323,7 +331,7 @@ function Row({
             onClick={onReset}
             className="h-8 rounded-full px-2 text-xs text-muted-foreground"
           >
-            还原
+            {t("common.restore")}
           </Button>
         ) : null}
         <Button
@@ -333,7 +341,7 @@ function Row({
           className="h-8 gap-1 rounded-full px-3 text-xs"
         >
           <Pencil className="size-3.5" strokeWidth={1.75} />
-          编辑
+          {t("common.edit")}
         </Button>
       </div>
     </li>
@@ -353,6 +361,7 @@ function EditorDialog({
   onOpenChange: (open: boolean) => void;
   onSave: (patch: PokemonOverride) => void;
 }) {
+  const { t, translateEnv, translateTaste, translateSpecialty, translateLitteredItem } = useT();
   const [name, setName] = useState("");
   const [env, setEnv] = useState<Environment | "none">("none");
   const [tastes, setTastes] = useState<Taste[]>([]);
@@ -432,9 +441,11 @@ function EditorDialog({
                   <span className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
                     #{String(pokemon.id).padStart(3, "0")}
                   </span>
-                  <DialogTitle>编辑 {pokemon.name}</DialogTitle>
+                  <DialogTitle>
+                    {t("feedback.editor.title", { name: pokemon.name })}
+                  </DialogTitle>
                   <DialogDescription className="text-xs">
-                    改动只保存在浏览器本地，可随时重置
+                    {t("feedback.editor.description")}
                   </DialogDescription>
                 </div>
               </div>
@@ -443,7 +454,7 @@ function EditorDialog({
             {/* Name + playable */}
             <div className="grid gap-4 sm:grid-cols-[1fr_auto]">
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="name">名字</Label>
+                <Label htmlFor="name">{t("feedback.editor.name")}</Label>
                 <Input
                   id="name"
                   value={name}
@@ -461,13 +472,13 @@ function EditorDialog({
                   htmlFor="playable"
                   className="cursor-pointer text-sm text-foreground/80"
                 >
-                  可入住
+                  {t("feedback.editor.playable")}
                 </Label>
               </div>
             </div>
 
             {/* Environment */}
-            <Field label="喜欢环境">
+            <Field label={t("feedback.editor.envLabel")}>
               <div className="flex flex-wrap gap-1.5">
                 <button
                   type="button"
@@ -479,7 +490,7 @@ function EditorDialog({
                       : "border-border/60 bg-background text-muted-foreground hover:bg-muted/60",
                   )}
                 >
-                  无
+                  {t("common.none")}
                 </button>
                 {CONSTANTS.environments.map((e) => {
                   const cls = ENVIRONMENT_CLASSES[e];
@@ -497,7 +508,7 @@ function EditorDialog({
                       )}
                     >
                       <span aria-hidden>{ENVIRONMENT_EMOJI[e]}</span>
-                      {e}
+                      {translateEnv(e)}
                     </button>
                   );
                 })}
@@ -505,19 +516,19 @@ function EditorDialog({
             </Field>
 
             {/* Taste */}
-            <Field label="口味（可多选，保存时若只选 1 个会存为字符串）">
+            <Field label={t("feedback.editor.tasteLabel")}>
               <div className="flex flex-wrap gap-1.5">
-                {TASTES.map((t) => {
-                  const active = tastes.includes(t);
+                {TASTES.map((ts) => {
+                  const active = tastes.includes(ts);
                   return (
                     <button
-                      key={t}
+                      key={ts}
                       type="button"
                       onClick={() =>
                         setTastes(
                           active
-                            ? tastes.filter((x) => x !== t)
-                            : [...tastes, t],
+                            ? tastes.filter((x) => x !== ts)
+                            : [...tastes, ts],
                         )
                       }
                       className={cn(
@@ -527,8 +538,8 @@ function EditorDialog({
                           : "border-border/60 bg-background text-foreground/70 hover:bg-muted/60",
                       )}
                     >
-                      <span aria-hidden>{TASTE_EMOJI[t]}</span>
-                      {t}
+                      <span aria-hidden>{TASTE_EMOJI[ts]}</span>
+                      {translateTaste(ts)}
                     </button>
                   );
                 })}
@@ -536,7 +547,7 @@ function EditorDialog({
             </Field>
 
             {/* Specialties */}
-            <Field label="特长（多选）">
+            <Field label={t("feedback.editor.specialtyLabel")}>
               <div className="flex flex-wrap gap-1">
                 {SPECIALTIES.map((s) => {
                   const active = specialties.has(s);
@@ -544,9 +555,7 @@ function EditorDialog({
                     <button
                       key={s}
                       type="button"
-                      onClick={() =>
-                        toggleSet(setSpecialties, specialties, s)
-                      }
+                      onClick={() => toggleSet(setSpecialties, specialties, s)}
                       className={cn(
                         "rounded-full border px-2 py-0.5 text-[11px] transition-colors",
                         active
@@ -554,7 +563,7 @@ function EditorDialog({
                           : "border-border/60 bg-background text-foreground/70 hover:bg-muted/60",
                       )}
                     >
-                      {s}
+                      {translateSpecialty(s)}
                     </button>
                   );
                 })}
@@ -562,7 +571,7 @@ function EditorDialog({
             </Field>
 
             {/* Littered items */}
-            <Field label="乱撒物（仅'乱撒'特长生效）">
+            <Field label={t("feedback.editor.litteredLabel")}>
               <div className="flex flex-wrap gap-1">
                 {uniqueLittered.map((it) => {
                   const active = littered.has(it);
@@ -578,7 +587,7 @@ function EditorDialog({
                           : "border-border/60 bg-background text-foreground/70 hover:bg-muted/60",
                       )}
                     >
-                      {it}
+                      {translateLitteredItem(it)}
                     </button>
                   );
                 })}
@@ -586,7 +595,7 @@ function EditorDialog({
             </Field>
 
             {/* Likes */}
-            <Field label="喜欢事物（多选）">
+            <Field label={t("feedback.editor.likesLabel")}>
               <div className="flex flex-wrap gap-1">
                 {uniqueLikes.map((l) => {
                   const active = likes.has(l);
@@ -610,12 +619,12 @@ function EditorDialog({
             </Field>
 
             {/* Notes */}
-            <Field label="备注（一行一条）">
+            <Field label={t("feedback.editor.notesLabel")}>
               <Textarea
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 rows={3}
-                placeholder="任何你对这条数据的纠偏 / 备注…"
+                placeholder={t("feedback.editor.notesPlaceholder")}
                 className="rounded-2xl"
               />
             </Field>
@@ -626,11 +635,11 @@ function EditorDialog({
                 onClick={() => onOpenChange(false)}
                 className="rounded-full"
               >
-                取消
+                {t("common.cancel")}
               </Button>
               <Button onClick={handleSave} className="gap-1.5 rounded-full">
                 <Save className="size-4" strokeWidth={1.75} />
-                保存修改
+                {t("feedback.editor.saveButton")}
               </Button>
             </DialogFooter>
           </div>
