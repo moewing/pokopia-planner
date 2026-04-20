@@ -1,133 +1,177 @@
-# Pokopia Planner
+# 🌸 Pokopia Planner
 
-一个帮玩家规划《Pokopia》宝可梦居住地的网站：图鉴、资源循环、前/后期规划器、数据纠错。审美基调是"如果无印良品设计了宝可梦的官方应用" —— 奶油白底、低饱和 pastel、深森林绿 CTA、大圆角、慷慨留白。
+> A cozy planning companion for Pokémon Pokopia — find, filter, and match your Pokémon to build cozy, cycle-efficient habitats.
 
-## 功能一览
+**[🔗 Live Demo](https://pokopia-planner.vercel.app)** · **[📖 中文说明](#中文说明)**
 
-| 模块 | 路径 | 做什么 |
-| --- | --- | --- |
-| 首页 | `/` | 5 模块导航 + 设计总览 |
-| 图鉴 | `/pokedex` | 300 只宝可梦可筛选可搜索 · 点卡片看详情（含"组循环伙伴"与"气味相投 Top 10"） |
-| 资源循环 | `/recipes` | 木材 / 红砖 / 铁条三条循环 + 废纸一次性加工 · 一键推荐最小完整阵容 |
-| 前期规划器 | `/planner/early` | 资源循环导向。选宝可梦 → 自动分 5 张地图（每张 ≤25）→ 按环境切 4×4 格子 → 重叠区物品推荐 |
-| 后期规划器 | `/planner/late` | 相似度导向。挑 2–10 只 → 两两相似度矩阵 → 自动分组 + 共同布置清单 |
-| 数据纠错 | `/edit` | 表格编辑任意字段 · 本地 localStorage 持久化 · 一键导出 JSON |
+<!-- Add a screenshot to docs/screenshot.png and uncomment below once deployed. -->
+<!-- ![Screenshot](./docs/screenshot.png) -->
 
-## 技术栈
+---
 
-- **框架**：Next.js 16 (App Router) + React 19 + TypeScript
-- **样式**：Tailwind CSS v4（CSS-first，无 `tailwind.config.ts`，token 全在 [`app/globals.css`](app/globals.css)）
-- **UI**：shadcn/ui（`base-nova` style，底层是 `@base-ui/react`，**不是** Radix）
-- **状态**：Zustand（规划器选择）
-- **图标**：Lucide
-- **动画**：Framer Motion（克制使用）
-- **测试**：Vitest（`pnpm test` 跑 44 条）
-- **部署**：Vercel
+## ✨ Features
 
-## 开发启动
+- **📖 Pokédex** — Browse all 300 Pokémon with rich filters by environment, specialty, taste, and likes
+- **⚙️ Resource Cycles** — Auto-recommend Pokémon teams for the 3 crafting loops (Wood / Brick / Iron Bar) + one-off paper processing
+- **🏡 Early-Stage Planner** — Three modes:
+  - **Single-map terrace** (default): stack envs across 3 axes (bright-dim / warm-cool / dry-humid), optimize item placement in overlap zones
+  - **Multi-map distribution**: split Pokémon across 5 maps (25 each) for dedicated resource cycles
+  - **Manual**: click-to-assign with real-time env/cycle warnings
+- **💝 Late-Stage Planner** — Pairwise similarity matrix (same-axis opposites = 0, cross-axis = 15 base) with auto-grouping and shared item suggestions
+- **✏️ Data Editor** — Fix any data locally (localStorage) and export updated JSON; edits flow live into every other module
+
+## 🎮 About the Game
+
+[Pokémon Pokopia](https://www.pokemon.com/us/pokemon-video-games/pokemon-pokopia) is a life-simulation spin-off for Nintendo Switch 2 where you play as a Ditto transformed into a human, helping Pokémon build habitats on a peaceful island.
+
+This tool helps you:
+
+- Quickly look up Pokémon preferences without opening a dozen wiki tabs
+- Plan efficient resource-cycle teams before committing to a habitat build
+- Figure out which Pokémon make good roommates for cozy endgame homes
+- Work out the *exact* item layout that maximises comfort across a terrace's shared zones
+
+## 🛠️ Tech Stack
+
+- **Framework**: Next.js 16 (App Router) + React 19 + TypeScript
+- **Styling**: Tailwind CSS v4 (CSS-first) + shadcn/ui (base-nova style)
+- **State**: Zustand (with `persist` middleware)
+- **Drag & Drop**: `@dnd-kit`
+- **Testing**: Vitest (58 unit tests)
+- **Deployment**: Vercel
+
+## 🚀 Local Development
 
 ```bash
-pnpm install
-pnpm dev       # → http://localhost:3000
+# Clone
+git clone https://github.com/moewing/pokopia-planner.git
+cd pokopia-planner
 
-pnpm test      # 单元测试
-pnpm typecheck # tsc --noEmit
-pnpm build     # 产线构建
+# Install (Node ≥ 20; uses pnpm via corepack)
+corepack enable
+pnpm install
+
+# Dev server
+pnpm dev           # → http://localhost:3000
+
+# Other scripts
+pnpm test          # vitest
+pnpm typecheck     # tsc --noEmit
+pnpm build         # production build
 pnpm lint
 ```
 
-Node 要求：≥ 20（用 Node 24 开发）。包管理器：pnpm（通过 `corepack enable` 启用即可）。
+## 📊 Data
 
-## 数据
+The Pokémon data in `/data/pokemon.json` is compiled from:
 
-[`data/pokemon.json`](data/pokemon.json) 是 schema v0.2 的权威来源，包含：
-- 300 只宝可梦（287 可入住、13 不可入住）
-- `constants` 块：6 环境 / 5 口味 / 32 特长 / 3 资源循环定义 / 地图机制常量 / 不可入住 ID
+- Player-curated specialty tables (community PDFs)
+- [kkplay3c.net](https://kkplay3c.net) — taste and likes data
+- [pokopiamap.com](https://pokopiamap.com) — official in-game art and English specialty names
+- [pokopiahabitats.com](https://pokopiahabitats.com) — specialty mechanics reference
+- `scripts/scrape_pokopiamap.ts` fills `type / time_of_day / weather / habitats` for all 300 Pokémon
+- In-game verification by the maintainer
 
-字段的含义、玩家实测纠偏、环境冲突修正记录见 [`data_notes.md`](data_notes.md) 与 [`AUDIT_REPORT.md`](AUDIT_REPORT.md)。
+Found a data error? You can fix it in the `/edit` page and export the corrected JSON, or open an issue.
 
-## 数据编辑流程
+## 📁 Project Structure
 
-1. 在 `/edit` 页面点任意行的"编辑"，改完保存 —— 改动只写到浏览器的 localStorage，不动仓库里的 JSON。
-2. 全站其他页面（图鉴 / 规划器 / 循环）会读取原始数据，暂不自动叠加 overrides（MVP 选择：保持"只读事实"）。
-3. 要把编辑结果固化进仓库：点"导出 JSON"下载文件，替换 `data/pokemon.json` 后提交 PR。
+```
+pokopia-planner/
+├── app/                    # Next.js App Router pages
+│   ├── pokedex/
+│   ├── recipes/
+│   ├── planner/
+│   │   ├── early/          # 3 tabs: terrace / multi-map / manual
+│   │   └── late/
+│   └── edit/
+├── components/             # PokemonCard, PokemonDetail, SiteNav, ThemeToggle…
+├── components/ui/          # shadcn/ui primitives (don't hand-edit; use the CLI)
+├── lib/                    # Core logic
+│   ├── data.ts             #   dataset + overrides
+│   ├── cycles.ts           #   resource-cycle role detection
+│   ├── similarity.ts       #   axis-aware similarity (same-axis opposite → 0)
+│   ├── terrace.ts          #   single-map terrace planner (primary)
+│   └── planner.ts          #   legacy 5-map distributor
+├── store/                  # Zustand stores (planner / manual-plan / overrides)
+├── types/pokemon.ts        # Canonical domain types + env-axis mappings
+├── data/pokemon.json       # Main data source (300 Pokémon, schema v0.2)
+└── scripts/
+    └── scrape_pokopiamap.ts  # Fill extension fields from pokopiamap.com
+```
 
-## 扩展字段补全（可选）
+## 🙏 Acknowledgments
 
-当前数据里 `type` / `time_of_day` / `weather` / `habitats` 四个字段为空，要补齐：
+Huge thanks to the Pokopia community:
+
+- Players who compiled and shared specialty tables
+- [kkplay3c.net](https://kkplay3c.net) for the comprehensive preference database
+- [pokopiamap.com](https://pokopiamap.com) and [pokopiahabitats.com](https://pokopiahabitats.com) for the thorough game wikis
+- Everyone who plays this cozy little game 💛
+
+## ⚠️ Disclaimer
+
+This is an **unofficial fan-made tool** for the game Pokémon Pokopia.
+
+Pokémon and all related names, images, and characters are trademarks of **Nintendo / Creatures Inc. / GAME FREAK inc. / The Pokémon Company**. This project is **not affiliated with, endorsed, or sponsored** by any of them.
+
+Pokémon icons are loaded from public CDNs ([pokopiamap.com](https://pokopiamap.com) and [PokeAPI](https://pokeapi.co)) and are **not hosted in this repository**.
+
+If you are a rights holder and have concerns about this project, please open an issue and I'll respond promptly.
+
+## 📄 License
+
+Code in this repository is licensed under the [MIT License](./LICENSE).
+
+Pokémon data, names, and imagery are not covered by this license and remain property of their respective rights holders.
+
+---
+
+## 中文说明
+
+**Pokopia 居住地规划助手** —— 任天堂 Switch 2 游戏《宝可梦 Pokopia》的非官方同人工具。
+
+### ✨ 功能
+
+- 📖 **图鉴**：300 只宝可梦完整信息，按环境 / 特长 / 口味 / 喜好事物多维筛选
+- ⚙️ **资源循环**：木材 / 红砖 / 铁条 三条循环 + 废纸一次性加工，一键推荐最小完整队伍
+- 🏡 **前期规划器**（三种模式）：
+  - **单地图精算**（默认）：按明暗 / 冷暖 / 燥湿 3 条环境轴在格子里叠加，重叠区物品效率最大化
+  - **多地图分配**：5 张地图 × 25 只上限，每张主承载一条资源循环
+  - **手动调整**：点击分配宝可梦到格子，实时显示环境冲突和循环完整性
+- 💝 **后期规划器**：两两相似度矩阵 + 自动分组 + 共同布置清单
+- ✏️ **数据纠错**：发现数据错误随时修改（localStorage），改动在全站即时生效，支持导出完整 JSON
+
+### 🎮 关于游戏
+
+[《宝可梦 Pokopia》](https://www.pokemon.com/us/pokemon-video-games/pokemon-pokopia) 是任天堂 Switch 2 平台的生活模拟类宝可梦衍生作品。玩家扮演被百变怪变身的人类，在平和的小岛上帮宝可梦们搭建舒适的居住地。
+
+### 🛠️ 技术栈
+
+Next.js 16 + React 19 + TypeScript · Tailwind CSS v4 + shadcn/ui · Zustand · @dnd-kit · Vitest · Vercel
+
+### 🚀 本地运行
 
 ```bash
-pnpm tsx scripts/scrape_pokopiamap.ts
-# 依赖 cheerio undici；脚本每 1.5s 请求一次，避免封禁
+git clone https://github.com/moewing/pokopia-planner.git
+cd pokopia-planner
+corepack enable
+pnpm install
+pnpm dev
 ```
 
-脚本会遍历 pokopiamap.com 每只宝可梦详情页抓取字段并回写 `data/pokemon.json`。详细说明见脚本头注释。
+打开 [http://localhost:3000](http://localhost:3000)。
 
-## 部署到 Vercel
+### 🙏 贡献
 
-推仓库到 GitHub / GitLab，在 [vercel.com](https://vercel.com) 导入项目即可自动识别 Next.js 16 + pnpm 并部署。没有环境变量依赖，开箱即用。
+欢迎提 Issue 反馈数据错误或新功能建议！如果你在游戏里验证了某只宝可梦的数据和本工具不一致，请告诉我 🙏
 
-```bash
-# 或者使用 Vercel CLI
-pnpm dlx vercel
-```
+### ⚠️ 免责声明
 
-## 设计基调
+本项目是非官方、由粉丝制作的工具，仅供个人学习与《Pokopia》玩家交流使用，未获得任何商业授权或官方合作关系。
 
-详细的设计规则（配色、留白、字体、禁区）写在 [`CLAUDE.md`](CLAUDE.md) 里，给未来的协作者（无论 AI 还是人）。核心要点：
+- 项目与 Nintendo、The Pokémon Company、Creatures Inc.、Game Freak、以及《Pokopia》开发发行方**无任何关联**，也未经其认可、审核或授权。
+- 所有宝可梦相关的名称、形象、图标、游戏机制术语均为各自权利人所有。项目中展示的宝可梦图片通过外链引用自 `pokopiamap.com` 与 `PokeAPI` GitHub CDN，版权归原权利人所有。
+- 数据由玩家社区多个来源整理合并，可能存在错误或与游戏实际表现不一致。使用本项目作出的任何规划决策均为玩家自身判断，项目作者不对游戏内效果负责。
 
-- 背景 `#FAFAF8`（奶油白），正文 `#2C2C2C`（近黑），CTA `#2F4B3F`（深森林绿）
-- 点缀色是 7 色低饱和 pastel（`--pkp-*`），映射到 6 个环境 badge
-- 卡片 `rounded-2xl/3xl`，只用 `shadow-sm/md`，不要 `shadow-lg`
-- 中文 Noto Sans SC / 苹方，英文数字 Inter
-- Lucide 图标线条细；emoji 只在环境标签点缀
-- 不做 52poke / Bulbapedia 那种信息密集资料库
-
-## 目录结构
-
-```
-app/                    # Next.js App Router
-├── pokedex/            # 图鉴页
-├── recipes/            # 循环配方页
-├── planner/
-│   ├── early/          # 前期规划器（资源循环导向）
-│   └── late/           # 后期规划器（相似度导向）
-├── edit/               # 数据纠错
-├── layout.tsx          # 全站 shell（含 SiteNav）
-└── globals.css         # 所有设计 token
-
-components/             # 业务组件
-├── ui/                 # shadcn/ui（别手改，用 shadcn CLI 追加）
-├── pokemon-card.tsx    # 图鉴卡片
-├── pokemon-detail.tsx  # 详情 Dialog
-├── pokemon-icon.tsx    # 带 onError fallback 的图标
-├── site-nav.tsx        # 顶栏
-├── planner-selector.tsx # 通用选择器（两个规划器共用）
-└── ...
-
-lib/
-├── data.ts             # 数据加载 + lookups + override 读写
-├── cycles.ts           # 角色细分 + analyzeCycles + recommendCycleTeam
-├── similarity.ts       # 相似度（不同环境硬切为 0）+ 分组 + 重叠
-├── planner.ts          # 前期规划算法（5 maps × 25 + env 分格子）
-└── __tests__/          # 44 条 vitest 单元测试
-
-store/
-└── planner-store.ts    # Zustand + persist（早 / 晚 两个独立实例）
-
-types/
-└── pokemon.ts          # 领域类型（Pokemon / DataConstants）+ UI 常量映射
-
-data/
-├── pokemon.json        # 权威数据（v0.2）
-└── pokemon.csv         # 参考 CSV
-
-scripts/
-└── scrape_pokopiamap.ts # 扩展字段补全脚本（可选）
-```
-
-## 致谢
-
-- 数据主要来源：用户提供的 PDF、kkplay3c.net、pokopiamap.com、pokopiahabitats.com
-- 地图机制 / 空间布局 / 环境冲突修正来自玩家社区实测
-- shadcn/ui 提供了与项目审美契合的基础组件
+如 Nintendo / The Pokémon Company / Game Freak 或任何权利人认为本项目侵犯了权益，请通过 GitHub issue 联系。
